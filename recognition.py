@@ -2,6 +2,7 @@ import cv2 as cv
 import numpy as np
 import imutils
 
+
 ss = cv.imread('ss2.png',-1)
 
 lower = np.array([130, 130, 130, 0])

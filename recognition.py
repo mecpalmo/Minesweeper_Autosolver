@@ -1,8 +1,10 @@
+import math
 import cv2 as cv
 import numpy as np
 import imutils
+import statistics
 
-ss = cv.imread('ss2.png',-1)
+ss = cv.imread('ss1.png',-1)
 
 lower = np.array([130, 130, 130, 0])
 upper = np.array([200, 200, 200, 255])
@@ -11,8 +13,8 @@ game_mask = cv.inRange(ss, lower, upper)
 kernel = np.ones((3, 3), np.uint8)
 game_mask = cv.erode(game_mask, kernel) 
 
-cv.imshow("game_mask", game_mask)
-cv.waitKey(0)
+#cv.imshow("game_mask", game_mask)
+#cv.waitKey(0)
 
 game_contours, _ = cv.findContours(game_mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
 
@@ -21,33 +23,31 @@ for i in game_contours:
     area = cv.contourArea(i)
     areas.append(area)
 
-sortedContours = sorted(game_contours, key=cv.contourArea, reverse=True)
+game_Contours = sorted(game_contours, key=cv.contourArea, reverse=True)
 
 field_mask = np.zeros((game_mask.shape),np.uint8)
-cv.drawContours(field_mask, [sortedContours[1]], -1, color=(255, 255, 255), thickness=cv.FILLED)
+cv.drawContours(field_mask, [game_Contours[1]], -1, color=(255, 255, 255), thickness=cv.FILLED)
 field_img = cv.bitwise_and(ss, ss, mask=field_mask)
 temp_mask = cv.dilate(game_mask, kernel)
 temp_mask = cv.bitwise_not(temp_mask)
 field_mask = cv.bitwise_and(temp_mask, temp_mask, mask=field_mask)
-cv.imshow("field_mask", field_mask)
-cv.waitKey(0)
-cv.imshow("field_img", field_img)
-cv.waitKey(0)
 
-#for sc in sortedContours:
-#    cv.drawContours(ss, [sc], -1, (0,0,255), 2)
-#    cv.imshow("ss", ss)
-#    cv.waitKey(0)
+#cv.imshow("field_mask", field_mask)
+#cv.waitKey(0)
+#cv.imshow("field_img", field_img)
+#cv.waitKey(0)
 
 field_gray = cv.cvtColor(field_img, cv.COLOR_BGRA2GRAY)
-cv.imshow("field_gray", field_gray)
-cv.waitKey(0)
+#cv.imshow("field_gray", field_gray)
+#cv.waitKey(0)
 
 field_gray = cv.equalizeHist(field_gray)
-cv.imshow("field_gray", field_gray)
-cv.waitKey(0)
+#cv.imshow("field_gray", field_gray)
+#cv.waitKey(0)
 
 field_contours, _ = cv.findContours(field_mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+
+square_contours = []
 
 for cnt in field_contours:
    approx = cv.approxPolyDP(cnt, 0.05*cv.arcLength(cnt, True), True)
@@ -56,20 +56,25 @@ for cnt in field_contours:
       ratio = float(w)/h
       if ratio >= 0.9 and ratio <= 1.1:
          ss = cv.drawContours(ss, [cnt], -1, (0,255,255), 1)
+         square_contours.append(cnt)
       else:
          ss = cv.drawContours(ss, [cnt], -1, (0,0,255), 1)
 
-# wyfiltrować kontury które tworzą kwadrat
+square_areas = []
 
-# policzyć powierzchnie wszystkich kwadratów
+for cnt in square_contours:
+   square_areas.append(cv.contourArea(cnt))
 
-# uzyskać medianę powierzchni wszystkich kwadratów
+med_area = statistics.median(square_areas)
 
-# obliczyć bok medianowego kwadratu (potem co najwyżej go troszku powiększyć dobranym parametrem)
+square_side = math.sqrt(med_area)*1.00
 
-# uzyskać szerokość i wysokość prostokątka field
+x, y, field_width, field_height = cv.boundingRect(game_Contours[1])
 
-# podzielić szerokość i wysokość prostokąta field przez bok małego kwadratu -> mamy rozmiar siatki (sprawdzić czy się zgadza)
+grid_x = field_width / square_side
+grid_y = field_height / square_side
 
-cv.imshow("Shapes", ss)
-cv.waitKey(0)
+print(f'{grid_x} x {grid_y}')
+
+#cv.imshow("Shapes", ss)
+#cv.waitKey(0)

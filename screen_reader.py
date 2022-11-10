@@ -10,6 +10,7 @@ def getScreenImage():
     screenshot = pyautogui.screenshot()
     return cv.cvtColor(np.array(screenshot), cv.COLOR_RGB2BGR)
 
+ss = getScreenImage()
 
 def getFieldContour(screenshot):
     

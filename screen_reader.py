@@ -2,54 +2,94 @@ import cv2 as cv
 import pyautogui
 import numpy as np
 
-ss = cv.imread('ss2.png',-1)
-ss = cv.cvtColor(ss, cv.COLOR_BGRA2BGR)
-
 def getScreenImage():
-    
     screenshot = pyautogui.screenshot()
     img = cv.cvtColor(np.array(screenshot), cv.COLOR_RGB2BGR)
-    #cv.imshow("screenshot", img)
-    #cv.waitKey(0)
     return img
 
-#ss = getScreenImage()
-
 def getFieldContour(screenshot):
+
+    #convert image to hvs to filter out based on vibration
     hsv = cv.cvtColor(screenshot, cv.COLOR_BGR2HSV)
+    
+    #filter out only certain shades of gray areas
     lower_thres = np.array([0, 0, 130])
     upper_thres = np.array([0, 0, 200])
     game_mask = cv.inRange(hsv, lower_thres, upper_thres)
+
+    #delete little particles
     kernel = np.ones((3, 3), np.uint8)
     game_mask = cv.erode(game_mask, kernel)
-    #game_mask = cv.dilate(game_mask, kernel)
-    cv.imshow("game_mask", game_mask)
-    cv.waitKey(0)
+    #cv.imshow("game_mask", game_mask)
+    #cv.waitKey(0)
+    
+    #find all contours on mask showing only game areas
     game_contours, _ = cv.findContours(game_mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
     rec_contours = []
     areas = []
+    #filter out only contours shaped similar to a rectangle
     for cnt in game_contours:
-        cv.drawContours(ss, [cnt], -1, (255,0,0), 1)
         approx = cv.approxPolyDP(cnt, 0.01*cv.arcLength(cnt, True), True)
         if len(approx) == 4:
-            cv.drawContours(ss, [cnt], -1, (0,0,255), 1)
             area = cv.contourArea(cnt)
             areas.append(area)
             rec_contours.append(cnt)
     
+    #sort rectangle contours by size from highest to lowest
     rec_contours = sorted(rec_contours, key=cv.contourArea, reverse=True)
     
-    x, y, field_width, field_height = cv.boundingRect(rec_contours[1])
-    x = x+2
-    y = y+2
-    field_width = field_width - 4
-    field_height = field_height - 4
-
+    #create a mask containing only the grid area of the game (assuming it's 2nd biggest contour)
     field_mask = np.zeros((game_mask.shape),np.uint8)
     cv.drawContours(field_mask, [rec_contours[1]], -1, color=(255, 255, 255), thickness=cv.FILLED)
     
-    cv.imshow("grid_mask", grid_mask)
-    cv.waitKey(0)
+    #make the rectangle a bit smaller and smoother as the contour was a bit too big
+    kernel = np.ones((5, 5), np.uint8)
+    field_mask = cv.erode(field_mask, kernel)
+    field_mask = cv.erode(field_mask, kernel)
+    #cv.imshow("field_mask", field_mask)
+    #cv.waitKey(0)
+    
+    #use field_mask to filter out the grid from og image
+    #enhance the histogram or sth to enhance edges, maybe dilate, erode
+    #find all contours in that image
+    #filter out only rectangles
+    #create a list of rectangles positions
+    #use size and position to determine the grid
+    #create function that creates a mask for one tile of grid
+
+    #from now correction
+    lower_thres = np.array([0, 0, 30])
+    upper_thres = np.array([0, 0, 255])
+    color_mask = cv.inRange(hsv, lower_thres, upper_thres)
+    #gray_screenshot = cv.cvtColor(screenshot, cv.COLOR_BGR2GRAY)
+    #gray_screenshot = cv.bitwise_and(gray_screenshot, gray_screenshot, mask=color_mask)
+    #gray_field = cv.bitwise_and(gray_screenshot, gray_screenshot, mask=field_mask)
+    gray_field = cv.bitwise_and(game_mask, game_mask, mask=field_mask)
+
+    #cv.imshow("gray_field", gray_field)
+    #cv.waitKey(0)
+
+    field_coordinates = []
+
+    field_contours, _ = cv.findContours(game_mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+    for cnt in field_contours : 
+        approx = cv.approxPolyDP(cnt, 0.009 * cv.arcLength(cnt, True), True) 
+        n = approx.ravel() 
+        i = 0
+        for j in n : 
+            if(i % 2 == 0): 
+                x = n[i] 
+                y = n[i + 1] 
+                field_coordinates.append([x,y])
+            i = i + 1
+    
+    #print(field_coordinates)
+    print(len(field_contours))
+    print(max(field_coordinates[_,0]))
+    print(min(field_coordinates[_,0]))
+    print(max(field_coordinates[_,1]))
+    print(min(field_coordinates[_,1]))
+
 
 
 def clickEmojiCenter(screenshot):
@@ -60,21 +100,16 @@ def clickEmojiCenter(screenshot):
     game_mask = cv.inRange(hsv, lower_thres, upper_thres)
     kernel = np.ones((3, 3), np.uint8)
     game_mask = cv.erode(game_mask, kernel) 
-    #cv.imshow("game_mask", game_mask)
-    #cv.waitKey(0)
     game_contours, _ = cv.findContours(game_mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
     rec_contours = []
     areas = []
     for cnt in game_contours:
-        #cv.drawContours(ss, [cnt], -1, (255,0,0), 1)
         approx = cv.approxPolyDP(cnt, 0.02*cv.arcLength(cnt, True), True)
         if len(approx) == 4:
-            #cv.drawContours(ss, [cnt], -1, (0,0,255), 1)
             area = cv.contourArea(cnt)
             areas.append(area)
             rec_contours.append(cnt)
     rec_contours = sorted(rec_contours, key=cv.contourArea, reverse=True)
-    cv.drawContours(ss, [rec_contours[2]], -1, (0,0,255), 1)
     gray_screenshot = cv.cvtColor(screenshot, cv.COLOR_BGR2GRAY)
     bar_mask = np.zeros((gray_screenshot.shape),np.uint8)
     cv.drawContours(bar_mask, [rec_contours[2]], -1, color=(255, 255, 255), thickness=cv.FILLED)
@@ -82,23 +117,10 @@ def clickEmojiCenter(screenshot):
     upper_thres = np.array([70, 255, 255])
     yellow_mask = cv.inRange(hsv, lower_thres, upper_thres)
     yellow_mask = cv.dilate(yellow_mask, kernel) 
-    #cv.imshow("yellow_mask", yellow_mask)
-    #cv.waitKey(0)
     emoji_mask = cv.bitwise_and(yellow_mask, yellow_mask, mask=bar_mask)
-    #cv.imshow("emoji_mask", emoji_mask)
-    #cv.waitKey(0)
     emoji_contours, _ = cv.findContours(emoji_mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
     emoji_contours = sorted(emoji_contours, key=cv.contourArea, reverse=True)
-    cv.drawContours(ss, [emoji_contours[0]], -1, (0,255,0), 1)
     M = cv.moments(emoji_contours[0])
     x = int(M["m10"] / M["m00"])
     y = int(M["m01"] / M["m00"])
     pyautogui.click(x, y)
-    
-
-#ss = cv.drawContours(ss, [getFieldContour(ss)], -1, (0,255,0), 2)
-#clickEmojiCenter(ss)
-getFieldContour(ss)
-
-cv.imshow("field_contour", ss)
-cv.waitKey(0)

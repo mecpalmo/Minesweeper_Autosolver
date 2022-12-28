@@ -50,45 +50,63 @@ def getFieldContour(screenshot):
     #cv.waitKey(0)
     
     #use field_mask to filter out the grid from og image
+    og_gray = cv.cvtColor(screenshot, cv.COLOR_BGR2GRAY)
+    grid_img = cv.bitwise_and(og_gray, og_gray, mask=field_mask)
+    cv.imshow("grid",grid_img)
+    cv.waitKey(0)
     #enhance the histogram or sth to enhance edges, maybe dilate, erode
+    grid_img = cv.equalizeHist(grid_img)
+    cv.imshow("grid",grid_img)
+    cv.waitKey(0)
     #find all contours in that image
+    grid_contours, _ = cv.findContours(grid_img, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
     #filter out only rectangles
+    rec_contours = []
+    areas = []
+    #filter out only contours shaped similar to a rectangle
+    for cnt in game_contours:
+        approx = cv.approxPolyDP(cnt, 0.01*cv.arcLength(cnt, True), True)
+        if len(approx) == 4:
+            area = cv.contourArea(cnt)
+            areas.append(area)
+            rec_contours.append(cnt)
     #create a list of rectangles positions
+    
     #use size and position to determine the grid
     #create function that creates a mask for one tile of grid
 
-    #from now correction
-    lower_thres = np.array([0, 0, 30])
-    upper_thres = np.array([0, 0, 255])
-    color_mask = cv.inRange(hsv, lower_thres, upper_thres)
-    #gray_screenshot = cv.cvtColor(screenshot, cv.COLOR_BGR2GRAY)
-    #gray_screenshot = cv.bitwise_and(gray_screenshot, gray_screenshot, mask=color_mask)
-    #gray_field = cv.bitwise_and(gray_screenshot, gray_screenshot, mask=field_mask)
-    gray_field = cv.bitwise_and(game_mask, game_mask, mask=field_mask)
+        #from now correction
+    #lower_thres = np.array([0, 0, 30])
+    #upper_thres = np.array([0, 0, 255])
+    #color_mask = cv.inRange(hsv, lower_thres, upper_thres)
+        #gray_screenshot = cv.cvtColor(screenshot, cv.COLOR_BGR2GRAY)
+        #gray_screenshot = cv.bitwise_and(gray_screenshot, gray_screenshot, mask=color_mask)
+        #gray_field = cv.bitwise_and(gray_screenshot, gray_screenshot, mask=field_mask)
+    #gray_field = cv.bitwise_and(game_mask, game_mask, mask=field_mask)
 
-    #cv.imshow("gray_field", gray_field)
-    #cv.waitKey(0)
+        #cv.imshow("gray_field", gray_field)
+        #cv.waitKey(0)
 
-    field_coordinates = []
+    #field_coordinates = []
 
-    field_contours, _ = cv.findContours(game_mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-    for cnt in field_contours : 
-        approx = cv.approxPolyDP(cnt, 0.009 * cv.arcLength(cnt, True), True) 
-        n = approx.ravel() 
-        i = 0
-        for j in n : 
-            if(i % 2 == 0): 
-                x = n[i] 
-                y = n[i + 1] 
-                field_coordinates.append([x,y])
-            i = i + 1
+    #field_contours, _ = cv.findContours(game_mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+    #for cnt in field_contours : 
+    #    approx = cv.approxPolyDP(cnt, 0.009 * cv.arcLength(cnt, True), True) 
+    #    n = approx.ravel() 
+    #    i = 0
+    #    for j in n : 
+    #        if(i % 2 == 0): 
+    #            x = n[i] 
+    #            y = n[i + 1] 
+    #            field_coordinates.append([x,y])
+    #        i = i + 1
     
     #print(field_coordinates)
-    print(len(field_contours))
-    print(max(field_coordinates[_,0]))
-    print(min(field_coordinates[_,0]))
-    print(max(field_coordinates[_,1]))
-    print(min(field_coordinates[_,1]))
+    #print(len(field_contours))
+    #print(max(field_coordinates[_,0]))
+    #print(min(field_coordinates[_,0]))
+    #print(max(field_coordinates[_,1]))
+    #print(min(field_coordinates[_,1]))
 
 
 

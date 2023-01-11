@@ -73,6 +73,7 @@ def getFieldContour(screenshot):
     #create a list of rectangles positions
     
     #use size and position to determine the grid
+    
     #create function that creates a mask for one tile of grid
 
         #from now correction

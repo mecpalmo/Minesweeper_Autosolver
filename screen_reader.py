@@ -1,6 +1,7 @@
 import cv2 as cv
 import pyautogui
 import numpy as np
+from collections import Counter
 
 def getScreenImage():
     screenshot = pyautogui.screenshot()
@@ -20,8 +21,6 @@ def getFieldContour(screenshot):
     #delete little particles
     kernel = np.ones((3, 3), np.uint8)
     game_mask = cv.erode(game_mask, kernel)
-    #cv.imshow("game_mask", game_mask)
-    #cv.waitKey(0)
     
     #find all contours on mask showing only game areas
     game_contours, _ = cv.findContours(game_mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
@@ -46,8 +45,9 @@ def getFieldContour(screenshot):
     kernel = np.ones((5, 5), np.uint8)
     field_mask = cv.erode(field_mask, kernel)
     field_mask = cv.erode(field_mask, kernel)
-    #cv.imshow("field_mask", field_mask)
-    #cv.waitKey(0)
+    #field_mask = cv.erode(field_mask, kernel)
+    cv.imshow("field_mask",field_mask)
+    cv.waitKey(0)
     
     #use field_mask to filter out the grid from og image
     og_gray = cv.cvtColor(screenshot, cv.COLOR_BGR2GRAY)
@@ -57,43 +57,86 @@ def getFieldContour(screenshot):
     
     #enhance the histogram or sth to enhance edges, maybe dilate, erode
     grid_img = cv.equalizeHist(grid_img)
+    #grid_img = cv.erode(grid_img, kernel)
     cv.imshow("grid",grid_img)
     cv.waitKey(0)
     
-    #find all contours in that image
-    grid_contours, _ = cv.findContours(grid_img, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+    edges = cv.Canny(grid_img,100,300,apertureSize = 3)
+    edges = cv.dilate(edges, kernel = np.ones((2, 2), np.uint8))
+    edges = cv.dilate(edges, kernel = np.ones((2, 2), np.uint8))
+    edges = cv.erode(edges, kernel= np.ones((2,2), np.uint8))
+    edges = cv.erode(edges, kernel= np.ones((2,2), np.uint8))
+
+    #edges = cv.dilate(edges, kernel = np.ones((2, 2), np.uint8))
     
+    
+    cv.imshow("Canny",edges)
+    cv.waitKey(0)
+
+    #find all contours in that image
+    grid_contours, _ = cv.findContours(edges, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+    #cv.drawContours(screenshot, grid_contours, -1, (0, 255, 0), 1)
     #filter out only rectangles
     rec_contours = []
-    
+    #create a list of rectangles positions
+    field_coordinates = []
     #filter out only contours shaped similar to a rectangle
-    for cnt in game_contours:
-        approx = cv.approxPolyDP(cnt, 0.01*cv.arcLength(cnt, True), True)
+    for cnt in grid_contours:
+        approx = cv.approxPolyDP(cnt, 0.05*cv.arcLength(cnt, True), True)
         if len(approx) == 4:
             area = cv.contourArea(cnt)
             areas.append(area)
             rec_contours.append(cnt)
-    
-    #create a list of rectangles positions
-    field_coordinates = []
-    for cnt in rec_contours : 
-        approx = cv.approxPolyDP(cnt, 0.01 * cv.arcLength(cnt, True), True) 
-        n = approx.ravel()
-        area = cv.contourArea(cnt)
-        i = 0
-        for j in n : 
-            if(i % 2 == 0): 
-                x = n[i] 
-                y = n[i + 1] 
-                field_coordinates.append([x,y])
-            i = i + 1
+            n = approx.ravel() 
+            x1 = n[0] 
+            y1 = n[1]
+            x2 = n[4]
+            y2 = n[5]
+            ratio = abs((x1-x2)/(y1-y2))
+            if(ratio < 1.2 and ratio > 0.8):
+                field_coordinates.append([x1,y1])
 
-    print(field_coordinates)
-    #print(len(field_contours))
-    print(max(field_coordinates[:,0]))
-    print(min(field_coordinates[:,0]))
-    print(max(field_coordinates[:,1]))
-    print(min(field_coordinates[:,1]))
+    #painting points to check
+    for f in field_coordinates:
+        screenshot = cv.circle(screenshot, (f[0],f[1]), radius=2, color=(0, 0, 255), thickness=-1)
+        #screenshot = cv.circle(screenshot, (f[2],f[3]), radius=2, color=(255, 0, 0), thickness=-1)
+
+    cv.imshow("points",screenshot)
+    cv.waitKey(0)
+
+    field_coordinates = np.array(field_coordinates)
+    xs = field_coordinates[:, 0]
+    ys = field_coordinates[:, 1]
+
+    x_dict = dict(Counter(xs))
+    y_dict = dict(Counter(ys))
+
+    x_dict_2 = { }
+    y_dict_2 = { }
+
+    for key in x_dict.keys():
+        if(x_dict[key]!=1):
+            x_dict_2[key] = x_dict[key]
+
+    for key in y_dict.keys():
+        if(y_dict[key]!=1):
+            y_dict_2[key] = y_dict[key]
+
+    print(x_dict_2)
+    print(y_dict_2)
+
+    xs = x_dict_2.keys()
+    ys = y_dict_2.keys()
+
+    #for x in xs:
+        #for y in ys:
+            #screenshot = cv.circle(screenshot, (x,y), radius=2, color=(0, 0, 255), thickness=-1)
+
+    cv.imshow("points",screenshot)
+    cv.waitKey(0)
+
+    #print(field_coordinates)
+    #print(len(field_coordinates))
     #use size and position to determine the grid
 
     #create function that creates a mask for one tile of grid

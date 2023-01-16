@@ -8,7 +8,7 @@ def getScreenImage():
     img = cv.cvtColor(np.array(screenshot), cv.COLOR_RGB2BGR)
     return img
 
-def getFieldContour(screenshot):
+def getGridLocationList(screenshot):
 
     #convert image to hvs to filter out based on vibration
     hsv = cv.cvtColor(screenshot, cv.COLOR_BGR2HSV)
@@ -66,10 +66,7 @@ def getFieldContour(screenshot):
     edges = cv.dilate(edges, kernel = np.ones((2, 2), np.uint8))
     edges = cv.erode(edges, kernel= np.ones((2,2), np.uint8))
     edges = cv.erode(edges, kernel= np.ones((2,2), np.uint8))
-
     #edges = cv.dilate(edges, kernel = np.ones((2, 2), np.uint8))
-    
-    
     cv.imshow("Canny",edges)
     cv.waitKey(0)
 
@@ -104,6 +101,7 @@ def getFieldContour(screenshot):
     cv.imshow("points",screenshot)
     cv.waitKey(0)
 
+    #getting positions of fields
     field_coordinates = np.array(field_coordinates)
     xs = field_coordinates[:, 0]
     ys = field_coordinates[:, 1]
@@ -122,29 +120,54 @@ def getFieldContour(screenshot):
         if(y_dict[key]!=1):
             y_dict_2[key] = y_dict[key]
 
-    print(x_dict_2)
-    print(y_dict_2)
-
     xs = x_dict_2.keys()
     ys = y_dict_2.keys()
 
-    #for x in xs:
-        #for y in ys:
-            #screenshot = cv.circle(screenshot, (x,y), radius=2, color=(0, 0, 255), thickness=-1)
+    xs = sorted(xs)
+    ys = sorted(ys)
 
-    cv.imshow("points",screenshot)
-    cv.waitKey(0)
+    #getting most common field width
+    x_spaces = []
+    y_spaces = []
+    
+    for i in range(0, len(xs)-1):
+        x_spaces.append(xs[i+1]-xs[i])
 
-    #print(field_coordinates)
-    #print(len(field_coordinates))
-    #use size and position to determine the grid
+    for i in range(0, len(ys)-1):
+        y_spaces.append(ys[i+1]-ys[i])
 
-    #create function that creates a mask for one tile of grid
+    x_space = np.max(x_spaces)
+    y_space = np.max(y_spaces)
+
+    print(f"x_space: {x_space}")
+    print(f"y_space: {y_space}")
+
+    #getting the width and height of the entire grid
+    field_mask_contour, _ = cv.findContours(field_mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+    sorted(field_mask_contour, reverse=True)
+    x0, y0, width, height = cv.boundingRect(field_mask_contour[0])
+
+    #get grid size
+    columns = int((width)/(x_space))
+    rows = int((height)/(x_space))
+
+    print(f"Width: {width}, Height: {height}")
+    print(f"Columns: {columns}, Rows: {rows}")
+
+    grid = []
+    
+    for i in range(0, rows):
+        row = []
+        for j in range(0, columns):
+            x = x0 + j*x_space
+            y = y0 + i*x_space
+            row.append([x, y])
+        grid.append(row)
+
+    return grid
 
 
-
-
-def clickEmojiCenter(screenshot):
+def getEmojiCenter(screenshot):
 
     hsv = cv.cvtColor(screenshot, cv.COLOR_BGR2HSV)
     lower_thres = np.array([0, 0, 130])
@@ -175,4 +198,5 @@ def clickEmojiCenter(screenshot):
     M = cv.moments(emoji_contours[0])
     x = int(M["m10"] / M["m00"])
     y = int(M["m01"] / M["m00"])
+    
     pyautogui.click(x, y)

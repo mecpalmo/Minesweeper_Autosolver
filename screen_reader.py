@@ -93,14 +93,6 @@ def getGridLocationList(screenshot):
             if(ratio < 1.2 and ratio > 0.8):
                 field_coordinates.append([x1,y1])
 
-    #painting points to check
-    for f in field_coordinates:
-        screenshot = cv.circle(screenshot, (f[0],f[1]), radius=2, color=(0, 0, 255), thickness=-1)
-        #screenshot = cv.circle(screenshot, (f[2],f[3]), radius=2, color=(255, 0, 0), thickness=-1)
-
-    cv.imshow("points",screenshot)
-    cv.waitKey(0)
-
     #getting positions of fields
     field_coordinates = np.array(field_coordinates)
     xs = field_coordinates[:, 0]
@@ -156,30 +148,30 @@ def getGridLocationList(screenshot):
 
     grid = []
     
-    for i in range(0, rows):
-        row = []
-        for j in range(0, columns):
-            x = x0 + j*x_space
-            y = y0 + i*x_space
-            row.append([x, y])
-        grid.append(row)
+    for i in range(0, columns):
+        column = []
+        for j in range(0, rows):
+            x = x0 + i*x_space
+            y = y0 + j*x_space
+            column.append([x, y])
+        grid.append(column)
+
+    grid = np.array(grid)
+
+    print(f"grid x1: {grid[1,0,0]}, grid x2: {grid[2,0,0]}")
 
     return grid
 
 def getFieldImage(screenshot, x, y):
     
     gridList = getGridLocationList(screenshot)
-    width = gridList[y, x+1, 0] - gridList[y, x, 0]
-    height = gridList[y+1, x, 1] - gridList[y, x, 1]
-
+    gridList = np.array(gridList)
+    a = gridList[x+1, y, 0] - gridList[x, y, 0]
+    a = 24
     ss = cv.cvtColor(screenshot, cv.COLOR_BGR2GRAY)
-
     # create a mask
     mask = np.zeros(ss.shape[:2], np.uint8)
-    cv.rectangle(mask, (gridList[y, x, 0], gridList[y, x, 1]), (width, height), (255, 255, 255), -1)
-    cv.imshow('Mask',mask)
-    cv.waitKey(0)
-
+    cv.rectangle(mask, (gridList[x,y,0], gridList[x,y,1]), (gridList[x+1,y+1,0], gridList[x+1,y+1,1]), (255, 255, 255), -1)
     masked_img = cv.bitwise_and(ss,ss,mask = mask)
     cv.imshow('Field',masked_img)
     cv.waitKey(0)

@@ -6,4 +6,4 @@ ss = cv.cvtColor(ss, cv.COLOR_BGRA2BGR)
 
 #ss = getScreenImage()
 
-sr.getFieldImage(ss,0,0)
+sr.getFieldImage(ss,23,12)

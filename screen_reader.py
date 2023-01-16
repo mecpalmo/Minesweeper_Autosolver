@@ -166,6 +166,23 @@ def getGridLocationList(screenshot):
 
     return grid
 
+def getFieldImage(screenshot, x, y):
+    
+    gridList = getGridLocationList(screenshot)
+    width = gridList[y, x+1, 0] - gridList[y, x, 0]
+    height = gridList[y+1, x, 1] - gridList[y, x, 1]
+
+    ss = cv.cvtColor(screenshot, cv.COLOR_BGR2GRAY)
+
+    # create a mask
+    mask = np.zeros(ss.shape[:2], np.uint8)
+    cv.rectangle(mask, (gridList[y, x, 0], gridList[y, x, 1]), (width, height), (255, 255, 255), -1)
+    cv.imshow('Mask',mask)
+    cv.waitKey(0)
+
+    masked_img = cv.bitwise_and(ss,ss,mask = mask)
+    cv.imshow('Field',masked_img)
+    cv.waitKey(0)
 
 def getEmojiCenter(screenshot):
 

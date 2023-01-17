@@ -45,10 +45,8 @@ def getGrid(screenshot):
         contours_coordinate.append(x_center)
 
     #we only need one axis to find most common space between centers of neighbouring fields
-    x_dict = dict(Counter(contours_coordinate))
-
-    xs = x_dict_2.keys()
-    ys = y_dict_2.keys()
+    
+    #make list a set to remove dupes
 
     xs = sorted(xs)
     ys = sorted(ys)

@@ -3,65 +3,41 @@ import pyautogui
 import numpy as np
 from collections import Counter
 
-def getScreenImage():
+
+
+def getScreenshot():
     screenshot = pyautogui.screenshot()
     img = cv.cvtColor(np.array(screenshot), cv.COLOR_RGB2BGR)
     return img
 
-def getGridLocationList(screenshot):
 
-    #convert image to hvs to filter out based on vibration
-    hsv = cv.cvtColor(screenshot, cv.COLOR_BGR2HSV)
-    
-    #filter out only certain shades of gray areas
-    lower_thres = np.array([0, 0, 130])
-    upper_thres = np.array([0, 0, 200])
-    game_mask = cv.inRange(hsv, lower_thres, upper_thres)
 
-    #delete little particles
-    kernel = np.ones((3, 3), np.uint8)
-    game_mask = cv.erode(game_mask, kernel)
-    
-    #find all contours on mask showing only game areas
-    game_contours, _ = cv.findContours(game_mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-    rec_contours = []
-    areas = []
-    #filter out only contours shaped similar to a rectangle
-    for cnt in game_contours:
-        approx = cv.approxPolyDP(cnt, 0.01*cv.arcLength(cnt, True), True)
-        if len(approx) == 4:
-            area = cv.contourArea(cnt)
-            areas.append(area)
-            rec_contours.append(cnt)
-    
-    #sort rectangle contours by size from highest to lowest
-    rec_contours = sorted(rec_contours, key=cv.contourArea, reverse=True)
-    
-    #create a mask containing only the grid area of the game (assuming it's 2nd biggest contour)
-    field_mask = np.zeros((game_mask.shape),np.uint8)
-    cv.drawContours(field_mask, [rec_contours[1]], -1, color=(255, 255, 255), thickness=cv.FILLED)
-    
-    #make the rectangle a bit smaller and smoother as the contour was a bit too big
-    kernel = np.ones((5, 5), np.uint8)
-    field_mask = cv.erode(field_mask, kernel)
-    field_mask = cv.erode(field_mask, kernel)
-    #field_mask = cv.erode(field_mask, kernel)
-    cv.imshow("field_mask",field_mask)
+def getGrid(screenshot):
+
+    game_image = getGameImage(screenshot)
+    game_image_gray = cv.cvtColor(game_image, cv.COLOR_BGR2GRAY)
+    game_canny = cv.Canny(game_image_gray, 100, 300, apertureSize = 3)
+    cv.imshow("game_canny", game_canny)
+    cv.waitKey(0)
+    game_contours, _ = cv.findContours(game_image_gray, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+    rectangle_contours = filterRectangleContours(game_contours)
+    rectangle_contours = sorted(rectangle_contours, key=cv.contourArea, reverse=True)
+    drawContours(game_image_gray, rectangle_contours)
+    #I'm assuming the 2nd biggest rectangle contour is around the grid
+    grid_mask = np.zeros((game_image.shape[:2]), np.uint8)
+    cv.drawContours(grid_mask, [rectangle_contours[1]], -1, color=(255, 255, 255), thickness=cv.FILLED)
+    #the grid mask needs to be smoothened out. We need it quite precise
+    cv.erode(grid_mask, kernel=np.ones((5, 5), np.uint8))
+    cv.erode(grid_mask, kernel=np.ones((5, 5), np.uint8))
+    cv.imshow("field_mask",grid_mask)
     cv.waitKey(0)
     
-    #use field_mask to filter out the grid from og image
-    og_gray = cv.cvtColor(screenshot, cv.COLOR_BGR2GRAY)
-    grid_img = cv.bitwise_and(og_gray, og_gray, mask=field_mask)
-    cv.imshow("grid",grid_img)
+    grid_image = cv.bitwise_and(game_image, game_image, mask=grid_mask)
+    #grid_image = cv.equalizeHist(grid_img)
+    cv.imshow("grid",grid_image)
     cv.waitKey(0)
     
-    #enhance the histogram or sth to enhance edges, maybe dilate, erode
-    grid_img = cv.equalizeHist(grid_img)
-    #grid_img = cv.erode(grid_img, kernel)
-    cv.imshow("grid",grid_img)
-    cv.waitKey(0)
-    
-    edges = cv.Canny(grid_img,100,300,apertureSize = 3)
+    edges = cv.Canny(grid_image,100,300,apertureSize = 3)
     edges = cv.dilate(edges, kernel = np.ones((2, 2), np.uint8))
     edges = cv.dilate(edges, kernel = np.ones((2, 2), np.uint8))
     edges = cv.erode(edges, kernel= np.ones((2,2), np.uint8))
@@ -81,8 +57,6 @@ def getGridLocationList(screenshot):
     for cnt in grid_contours:
         approx = cv.approxPolyDP(cnt, 0.05*cv.arcLength(cnt, True), True)
         if len(approx) == 4:
-            area = cv.contourArea(cnt)
-            areas.append(area)
             rec_contours.append(cnt)
             n = approx.ravel() 
             x1 = n[0] 
@@ -135,7 +109,7 @@ def getGridLocationList(screenshot):
     print(f"y_space: {y_space}")
 
     #getting the width and height of the entire grid
-    field_mask_contour, _ = cv.findContours(field_mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+    field_mask_contour, _ = cv.findContours(grid_mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
     sorted(field_mask_contour, reverse=True)
     x0, y0, width, height = cv.boundingRect(field_mask_contour[0])
 
@@ -158,54 +132,79 @@ def getGridLocationList(screenshot):
 
     grid = np.array(grid)
 
-    print(f"grid x1: {grid[1,0,0]}, grid x2: {grid[2,0,0]}")
+    return grid, x_space
 
-    return grid
 
-def getFieldImage(screenshot, x, y):
+
+
+def getFieldImage(screenshot, column, row):
     
-    gridList = getGridLocationList(screenshot)
-    gridList = np.array(gridList)
-    a = gridList[x+1, y, 0] - gridList[x, y, 0]
-    a = 24
-    ss = cv.cvtColor(screenshot, cv.COLOR_BGR2GRAY)
-    # create a mask
-    mask = np.zeros(ss.shape[:2], np.uint8)
-    cv.rectangle(mask, (gridList[x,y,0], gridList[x,y,1]), (gridList[x+1,y+1,0], gridList[x+1,y+1,1]), (255, 255, 255), -1)
-    masked_img = cv.bitwise_and(ss,ss,mask = mask)
-    cv.imshow('Field',masked_img)
+    gridArray, square_side_length = getGrid(screenshot)
+    mask = np.zeros(screenshot.shape[:2], np.uint8)
+    x = gridArray[column, row, 0]
+    y = gridArray[column, row, 1]
+    cv.rectangle(mask, (x, y), (x+square_side_length, y+square_side_length), color=(255, 255, 255), thickness=cv.FILLED)
+    field_img = cv.bitwise_and(screenshot,screenshot,mask = mask)
+    cv.imshow('Field',field_img)
     cv.waitKey(0)
 
-def getEmojiCenter(screenshot):
 
-    hsv = cv.cvtColor(screenshot, cv.COLOR_BGR2HSV)
-    lower_thres = np.array([0, 0, 130])
-    upper_thres = np.array([0, 0, 200])
-    game_mask = cv.inRange(hsv, lower_thres, upper_thres)
-    kernel = np.ones((3, 3), np.uint8)
-    game_mask = cv.erode(game_mask, kernel) 
-    game_contours, _ = cv.findContours(game_mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-    rec_contours = []
-    areas = []
-    for cnt in game_contours:
-        approx = cv.approxPolyDP(cnt, 0.02*cv.arcLength(cnt, True), True)
-        if len(approx) == 4:
-            area = cv.contourArea(cnt)
-            areas.append(area)
-            rec_contours.append(cnt)
-    rec_contours = sorted(rec_contours, key=cv.contourArea, reverse=True)
-    gray_screenshot = cv.cvtColor(screenshot, cv.COLOR_BGR2GRAY)
-    bar_mask = np.zeros((gray_screenshot.shape),np.uint8)
-    cv.drawContours(bar_mask, [rec_contours[2]], -1, color=(255, 255, 255), thickness=cv.FILLED)
-    lower_thres = np.array([10, 20, 50])
-    upper_thres = np.array([70, 255, 255])
-    yellow_mask = cv.inRange(hsv, lower_thres, upper_thres)
-    yellow_mask = cv.dilate(yellow_mask, kernel) 
-    emoji_mask = cv.bitwise_and(yellow_mask, yellow_mask, mask=bar_mask)
+
+
+def getEmojiCenterPoint(screenshot):
+
+    game_image = getGameImage(screenshot)
+    game_image_hsv = cv.cvtColor(game_image, cv.COLOR_BGR2HSV)
+    #I'm detecting Emoji based on yellow color
+    lower_threshold = np.array([10, 0, 230])
+    upper_threshold = np.array([31, 255, 255])
+    emoji_mask = cv.inRange(game_image_hsv, lower_threshold, upper_threshold)
+    cv.dilate(emoji_mask, kernel=np.ones((5, 5), np.uint8))
     emoji_contours, _ = cv.findContours(emoji_mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
     emoji_contours = sorted(emoji_contours, key=cv.contourArea, reverse=True)
     M = cv.moments(emoji_contours[0])
-    x = int(M["m10"] / M["m00"])
-    y = int(M["m01"] / M["m00"])
+    x_center = int(M["m10"] / M["m00"])
+    y_center = int(M["m01"] / M["m00"])
     
-    pyautogui.click(x, y)
+    return x_center, y_center
+    #pyautogui.click(x, y)
+
+
+
+
+def getGameImage(screenshot):
+
+    hsv = cv.cvtColor(screenshot, cv.COLOR_BGR2HSV)
+    #I'm detecting the game area based on certain shades of gray with no vibrance
+    lower_threshold = np.array([0, 0, 130])
+    upper_threshold = np.array([0, 0, 200])
+    game_mask = cv.inRange(hsv, lower_threshold, upper_threshold)
+    game_mask = cv.morphologyEx(game_mask, cv.MORPH_OPEN, kernel=np.ones((3,3), np.uint8))
+    game_contours, _ = cv.findContours(game_mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+    rectangle_contours = filterRectangleContours(game_contours)
+    game_mask = np.zeros((screenshot.shape[:2]), np.uint8)
+    #I'm assuming the biggest contour is bounding the game area
+    rec_contours = sorted(rectangle_contours, key=cv.contourArea, reverse=True)
+    cv.drawContours(game_mask, [rectangle_contours[0]], -1, color=(255, 255, 255), thickness=cv.FILLED)
+    
+    return cv.bitwise_and(screenshot, screenshot, mask=game_mask)
+
+
+
+def filterRectangleContours(contours):
+    rectangle_contours = []
+    for cnt in contours:
+        approx = cv.approxPolyDP(cnt, 0.02*cv.arcLength(cnt, True), True)
+        if len(approx) == 4:
+            rectangle_contours.append(cnt)
+
+    return rectangle_contours
+
+
+
+def drawContours(image, contours):
+    for cnt in contours:
+        cv.drawContours(image, contours, 3, (0,255,0), 3)
+    
+    cv.imshow("contours", image)
+    cv.waitKey(0)

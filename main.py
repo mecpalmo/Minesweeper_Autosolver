@@ -6,6 +6,6 @@ ss = cv.cvtColor(ss, cv.COLOR_BGRA2BGR)
 
 #ss = getScreenshot()
 
-sr.getFieldImage(ss,23,12)
+sr.getFieldImage(ss,2,3)
 
 #print(sr.getEmojiCenterPoint(ss))

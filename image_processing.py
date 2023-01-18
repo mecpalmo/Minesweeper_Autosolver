@@ -53,8 +53,8 @@ def getGridDetails(screenshot):
     sorted(grid_mask_contours, reverse=True)
     #I'm assuming the biggest contour of grid_mask marks the grid
     x0, y0, width, height = cv.boundingRect(grid_mask_contours[0])
-    columns = int((width)/(square_side_length))
-    rows = int((height)/(square_side_length))
+    columns = int(np.round((width)/(square_side_length)))
+    rows = int(np.round((height)/(square_side_length)))
     print(f"Width: {width}, Height: {height}")
     print(f"Columns: {columns}, Rows: {rows}")
 
@@ -64,25 +64,25 @@ def getGridDetails(screenshot):
 
 def getDefinedGrid(screenshot):
     x0, y0, columns, rows, square_side_length = getGridDetails(screenshot)
-    grid_content = []
+    grid_content = np.ones((columns,rows))*CLOSED_UNKNOWN
     for column in range(0,columns):
         for row in range(0,rows):
-            grid_content[column, row] = classifyFieldContent(screenshot, column, row)
+            grid_content[column, row] = classifyFieldContent(screenshot, column, row, x0, y0, square_side_length)
 
 
 
-def classifyFieldContent(screenshot, column, row):
-    field_image = getFieldImage(screenshot, column, row)
-    screenshot_hsv = cv.cvtColor(screenshot, cv.COLOR_BGR2HSV)
-    lower_threshold = np.array([0, 0, 130])
-    upper_threshold = np.array([0, 0, 200])
+def classifyFieldContent(screenshot, column, row, x0, y0, square_side_length):
+    field_image = getFieldImage(screenshot, column, row, x0, y0, square_side_length)
+    screenshot_hsv = cv.cvtColor(field_image, cv.COLOR_BGR2HSV)
+    lower_threshold = np.array([0, 200, 50])
+    upper_threshold = np.array([180, 255, 255])
     color_mask = cv.inRange(screenshot_hsv, lower_threshold, upper_threshold)
     showImage(color_mask)
+    return 0
 
 
 
-def getFieldImage(screenshot, column, row):
-    x0, y0, square_side_length = getGridDetails(screenshot)
+def getFieldImage(screenshot, column, row, x0, y0, square_side_length):
     mask = np.zeros(screenshot.shape[:2], np.uint8)
     x1, y1, x2, y2 = getFieldCoordinates(x0, y0, square_side_length, column, row)
     cv.rectangle(mask, (x1, y1), (x2, y2), color=(255, 255, 255), thickness=cv.FILLED)
@@ -160,8 +160,9 @@ def filterSquareContours(contours):
         if len(approx) == 4:
             area = cv.contourArea(cnt)
             perimeter = cv.arcLength(cnt,True)
-            ratio = np.square(perimeter)/area
-            if(ratio > 14 and ratio < 18 and area > 9):
+            ratio = 0
+            if(area!=0): ratio = np.square(perimeter)/area
+            if(ratio > 14 and ratio < 18 and area > 25):
                 square_contours.append(cnt)
     return square_contours
 

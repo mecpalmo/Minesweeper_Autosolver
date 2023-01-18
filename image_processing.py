@@ -1,18 +1,16 @@
 import cv2 as cv
-import pyautogui
 import numpy as np
-from collections import Counter
+
+CLOSED_UNKNOWN = 99
+OPEN_EMPTY = 0
+CLOSED_MINE = 98
+CLOSED_FLAG = 97
+OPEN_MINE = 96
 
 SHOW_IMAGE_PROCESSING = True
 
-def getScreenshot():
-    screenshot = pyautogui.screenshot()
-    img = cv.cvtColor(np.array(screenshot), cv.COLOR_RGB2BGR)
-    return img
 
-
-
-def getGrid(screenshot):
+def getGridDetails(screenshot):
 
     game_image = getGameImage(screenshot)
     game_image_gray = cv.cvtColor(game_image, cv.COLOR_BGR2GRAY)
@@ -36,74 +34,70 @@ def getGrid(screenshot):
     grid_contours, _ = cv.findContours(grid_canny, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
     square_contours = filterSquareContours(grid_contours)
     drawContours(grid_image, square_contours)
-    
     contours_coordinate = []
-
     for cnt in square_contours:
         M = cv.moments(cnt)
         x_center = int(M["m10"] / M["m00"])
         contours_coordinate.append(x_center)
-
     #we only need one axis to find most common space between centers of neighbouring fields
-    
-    #make list a set to remove dupes
-
-    xs = sorted(xs)
-    ys = sorted(ys)
-
-    #getting most common field width
+    x_set = set(contours_coordinate)
+    contours_coordinate = sorted(list(x_set))
     x_spaces = []
-    y_spaces = []
-    
-    for i in range(0, len(xs)-1):
-        x_spaces.append(xs[i+1]-xs[i])
-
-    for i in range(0, len(ys)-1):
-        y_spaces.append(ys[i+1]-ys[i])
-
-    x_space = np.max(x_spaces)
-    y_space = np.max(y_spaces)
-
-    print(f"x_space: {x_space}")
-    print(f"y_space: {y_space}")
-
-    #getting the width and height of the entire grid
-    field_mask_contour, _ = cv.findContours(grid_mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-    sorted(field_mask_contour, reverse=True)
-    x0, y0, width, height = cv.boundingRect(field_mask_contour[0])
-
-    #get grid size
-    columns = int((width)/(x_space))
-    rows = int((height)/(x_space))
-
+    for i in range(0, len(contours_coordinate)-1):
+        x_spaces.append(contours_coordinate[i+1]-contours_coordinate[i])
+    #I'm assuming the square side is equal to the biggest space between fields
+    square_side_length = np.max(x_spaces)
+    print(f"Square side: {square_side_length}")
+    #we need the size of entire grid to calculate how many fields fit in
+    grid_mask_contours, _ = cv.findContours(grid_mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+    sorted(grid_mask_contours, reverse=True)
+    #I'm assuming the biggest contour of grid_mask marks the grid
+    x0, y0, width, height = cv.boundingRect(grid_mask_contours[0])
+    columns = int((width)/(square_side_length))
+    rows = int((height)/(square_side_length))
     print(f"Width: {width}, Height: {height}")
     print(f"Columns: {columns}, Rows: {rows}")
 
-    grid = []
-    
-    for i in range(0, columns):
-        column = []
-        for j in range(0, rows):
-            x = x0 + i*x_space
-            y = y0 + j*x_space
-            column.append([x, y])
-        grid.append(column)
+    return x0, y0, columns, rows, square_side_length
 
-    grid = np.array(grid)
 
-    return grid, x_space
+
+def getDefinedGrid(screenshot):
+    x0, y0, columns, rows, square_side_length = getGridDetails(screenshot)
+    grid_content = []
+    for column in range(0,columns):
+        for row in range(0,rows):
+            grid_content[column, row] = classifyFieldContent(screenshot, column, row)
+
+
+
+def classifyFieldContent(screenshot, column, row):
+    field_image = getFieldImage(screenshot, column, row)
+    screenshot_hsv = cv.cvtColor(screenshot, cv.COLOR_BGR2HSV)
+    lower_threshold = np.array([0, 0, 130])
+    upper_threshold = np.array([0, 0, 200])
+    color_mask = cv.inRange(screenshot_hsv, lower_threshold, upper_threshold)
+    showImage(color_mask)
 
 
 
 def getFieldImage(screenshot, column, row):
-    
-    gridArray, square_side_length = getGrid(screenshot)
+    x0, y0, square_side_length = getGridDetails(screenshot)
     mask = np.zeros(screenshot.shape[:2], np.uint8)
-    x = gridArray[column, row, 0]
-    y = gridArray[column, row, 1]
-    cv.rectangle(mask, (x, y), (x+square_side_length, y+square_side_length), color=(255, 255, 255), thickness=cv.FILLED)
+    x1, y1, x2, y2 = getFieldCoordinates(x0, y0, square_side_length, column, row)
+    cv.rectangle(mask, (x1, y1), (x2, y2), color=(255, 255, 255), thickness=cv.FILLED)
     field_img = cv.bitwise_and(screenshot, screenshot, mask=mask)
     showImage(field_img)
+    return(field_img)
+
+
+
+def getFieldCoordinates(x0, y0, square_side_length, column, row):
+    x1 = x0 + column*square_side_length
+    y1 = y0 + row*square_side_length
+    x2 = x1 + square_side_length
+    y2 = y1 + square_side_length
+    return x1, y1, x2, y2
 
 
 
@@ -123,7 +117,6 @@ def getEmojiCenterPoint(screenshot):
     x_center = int(M["m10"] / M["m00"])
     y_center = int(M["m01"] / M["m00"])
     return x_center, y_center
-    #pyautogui.click(x, y)
 
 
 

@@ -1,14 +1,16 @@
 import cv2 as cv
 import numpy as np
 
-UNDETERMINED = 99
-CLOSED_UNKNOWN = 98
-OPEN_EMPTY = 0
-CLOSED_MINE = 97
-CLOSED_FLAG = 96
-OPEN_MINE = 95
 
-SHOW_IMAGE_PROCESSING = True
+
+UNDETERMINED = 99
+OPEN_EMPTY = 0
+OPEN_MINE = 98
+CLOSED_UNKNOWN = 97
+CLOSED_FLAG = 96
+
+SHOW_IMAGE_PROCESSING = False
+
 
 
 def getGridDetails(screenshot):
@@ -71,26 +73,36 @@ def getDefinedGrid(screenshot):
     for column in range(0,columns):
         for row in range(0,rows):
             grid_content[column, row] = classifyFieldContent(grid_image, column, row, square_side_length)
-    return grid_content, x0, y0, square_side_length
+    return grid_content, x0, y0, columns, rows, square_side_length
 
 
 
 def classifyFieldContent(grid_image, column, row, square_side_length):
     field_image = getFieldImage(grid_image, column, row, square_side_length)
-    screenshot_hsv = cv.cvtColor(field_image, cv.COLOR_BGR2HSV)
+    field_image_hsv = cv.cvtColor(field_image, cv.COLOR_BGR2HSV)
     lower_threshold = np.array([0, 200, 50])
     upper_threshold = np.array([180, 255, 255])
-    color_mask = cv.inRange(screenshot_hsv, lower_threshold, upper_threshold)
+    color_mask = cv.inRange(field_image_hsv, lower_threshold, upper_threshold)
     showImage(color_mask)
-    white_pixels = np.sum(color_mask == 255)
+    color_pixels = np.sum(color_mask == 255)
     area = np.square(square_side_length)
-    white_pixel_ratio = white_pixels/area
-    if(white_pixel_ratio > 0.1): #it's a number based on high amount of coloured pixels
+    color_pixel_ratio = color_pixels/area
+    if(color_pixel_ratio > 0.1): #it's a number based on high amount of coloured pixels
         return classifyNumber(cv.bitwise_and(field_image, field_image, mask=color_mask))
-    elif(white_pixel_ratio > 0): #it's a flag based on low amount of coloured pixels
+    elif(color_pixel_ratio > 0): #it's a flag based on low amount of coloured pixels
         return CLOSED_FLAG
     else:
-        return UNDETERMINED
+        field_image_gray = cv.cvtColor(field_image, cv.COLOR_BGR2GRAY)
+        black_pixels = np.sum(field_image_gray < 5)
+        black_pixel_ratio = black_pixels/area
+        if(black_pixel_ratio > 0.15):
+            return OPEN_MINE
+        else:
+            white_pixels = np.sum(field_image_gray > 250)
+            white_pixel_ratio = white_pixels/area
+            if(white_pixel_ratio > 0.12):
+                return CLOSED_UNKNOWN
+            else: return OPEN_EMPTY
 
 
 

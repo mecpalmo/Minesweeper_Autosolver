@@ -1,11 +1,12 @@
 import cv2 as cv
 import numpy as np
 
-CLOSED_UNKNOWN = 99
+UNDETERMINED = 99
+CLOSED_UNKNOWN = 98
 OPEN_EMPTY = 0
-CLOSED_MINE = 98
-CLOSED_FLAG = 97
-OPEN_MINE = 96
+CLOSED_MINE = 97
+CLOSED_FLAG = 96
+OPEN_MINE = 95
 
 SHOW_IMAGE_PROCESSING = True
 
@@ -64,37 +65,88 @@ def getGridDetails(screenshot):
 
 def getDefinedGrid(screenshot):
     x0, y0, columns, rows, square_side_length = getGridDetails(screenshot)
-    grid_content = np.ones((columns,rows))*CLOSED_UNKNOWN
+    grid_image = screenshot[y0:(y0+rows*square_side_length), x0:(x0+columns*square_side_length)]
+    showImage(grid_image)
+    grid_content = np.ones((columns,rows))*UNDETERMINED
     for column in range(0,columns):
         for row in range(0,rows):
-            grid_content[column, row] = classifyFieldContent(screenshot, column, row, x0, y0, square_side_length)
+            grid_content[column, row] = classifyFieldContent(grid_image, column, row, square_side_length)
+    return grid_content, x0, y0, square_side_length
 
 
 
-def classifyFieldContent(screenshot, column, row, x0, y0, square_side_length):
-    field_image = getFieldImage(screenshot, column, row, x0, y0, square_side_length)
+def classifyFieldContent(grid_image, column, row, square_side_length):
+    field_image = getFieldImage(grid_image, column, row, square_side_length)
     screenshot_hsv = cv.cvtColor(field_image, cv.COLOR_BGR2HSV)
     lower_threshold = np.array([0, 200, 50])
     upper_threshold = np.array([180, 255, 255])
     color_mask = cv.inRange(screenshot_hsv, lower_threshold, upper_threshold)
     showImage(color_mask)
-    return 0
+    white_pixels = np.sum(color_mask == 255)
+    area = np.square(square_side_length)
+    white_pixel_ratio = white_pixels/area
+    if(white_pixel_ratio > 0.1): #it's a number based on high amount of coloured pixels
+        return classifyNumber(cv.bitwise_and(field_image, field_image, mask=color_mask))
+    elif(white_pixel_ratio > 0): #it's a flag based on low amount of coloured pixels
+        return CLOSED_FLAG
+    else:
+        return UNDETERMINED
 
 
 
-def getFieldImage(screenshot, column, row, x0, y0, square_side_length):
-    mask = np.zeros(screenshot.shape[:2], np.uint8)
-    x1, y1, x2, y2 = getFieldCoordinates(x0, y0, square_side_length, column, row)
-    cv.rectangle(mask, (x1, y1), (x2, y2), color=(255, 255, 255), thickness=cv.FILLED)
-    field_img = cv.bitwise_and(screenshot, screenshot, mask=mask)
+def classifyNumber(image):
+    image_hsv = cv.cvtColor(image, cv.COLOR_BGR2HSV)
+    pixel = getDominantColorPixel(image_hsv)
+    hue = pixel[0]
+    vibration = pixel[2]
+    if(vibration > 230):
+        if(hue > 115 and hue < 125):
+            return 1
+        if(hue > 175 or hue < 5):
+            return 3
+        else: pass
+    elif(vibration > 100 & vibration < 150):
+        if(hue > 55 and hue < 65):
+            return 2
+        if(hue > 115 and hue < 125):
+            return 4
+        if(hue > 175 or hue < 5):
+            return 5 
+        if(hue > 85 and hue < 95):
+            return 6
+        if(hue > 145 and hue < 155):
+            return 7
+        else: pass
+    else: pass
+    return UNDETERMINED
+
+
+
+def getDominantColorPixel(image_hsv):
+    width = image_hsv.shape[1]
+    height = image_hsv.shape[0]
+    pixels_of_interest = []
+    for i in range(0,width):
+        for j in range(0,height):
+            pixel = image_hsv[i,j]
+            if(pixel[2]>50):
+                pixels_of_interest.append(pixel)
+                return pixel #returns pixel in hsv
+
+
+
+def getFieldImage(grid_image, column, row, square_side_length):
+    mask = np.zeros(grid_image.shape[:2], np.uint8)
+    x1, y1, x2, y2 = getFieldCoordinates(square_side_length, column, row)
+    field_img = grid_image[y1:y2, x1:x2]
     showImage(field_img)
     return(field_img)
 
 
 
-def getFieldCoordinates(x0, y0, square_side_length, column, row):
-    x1 = x0 + column*square_side_length
-    y1 = y0 + row*square_side_length
+def getFieldCoordinates(square_side_length, column, row):
+    x1 = column*square_side_length
+    y1 = row*square_side_length
     x2 = x1 + square_side_length
     y2 = y1 + square_side_length
     return x1, y1, x2, y2

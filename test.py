@@ -5,9 +5,11 @@ import random
 import time
 
 TESTING = False
+SHOW_IMAGE_PROCESSING = False
+
 
 def performRandomSolving():
-    
+
     grid_content, x0, y0, columns, rows, square_side_length = ip.getDefinedGrid(sm.getScreenshot())
     
     while(ip.CLOSED_UNKNOWN in grid_content):

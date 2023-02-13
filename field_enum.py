@@ -1,7 +1,7 @@
 from enum import Enum
 
-class Field(Enum):
-    
+class Field_Content(Enum):
+
     UNDETERMINED = 99
     OPEN_EMPTY = 0
     OPEN_MINE = 98

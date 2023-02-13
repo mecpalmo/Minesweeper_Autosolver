@@ -1,6 +1,6 @@
 import cv2 as cv
 import numpy as np
-from field_enum import Field
+from field_enum import Field_Content
 from test import SHOW_IMAGE_PROCESSING
 
 
@@ -61,7 +61,7 @@ def getDefinedGrid(screenshot):
     x0, y0, columns, rows, square_side_length = getGridDetails(screenshot)
     grid_image = screenshot[y0:(y0+rows*square_side_length), x0:(x0+columns*square_side_length)]
     showImage(grid_image)
-    grid_content = np.ones((columns,rows))*Field.UNDETERMINED
+    grid_content = np.ones((columns,rows))*Field_Content.UNDETERMINED
     for column in range(0,columns):
         for row in range(0,rows):
             grid_content[column, row] = classifyFieldContent(grid_image, column, row, square_side_length)
@@ -82,19 +82,19 @@ def classifyFieldContent(grid_image, column, row, square_side_length):
     if(color_pixel_ratio > 0.1): #it's a number based on high amount of coloured pixels
         return classifyNumber(cv.bitwise_and(field_image, field_image, mask=color_mask))
     elif(color_pixel_ratio > 0): #it's a flag based on low amount of coloured pixels
-        return Field.CLOSED_FLAG
+        return Field_Content.CLOSED_FLAG
     else:
         field_image_gray = cv.cvtColor(field_image, cv.COLOR_BGR2GRAY)
         black_pixels = np.sum(field_image_gray < 5)
         black_pixel_ratio = black_pixels/area
         if(black_pixel_ratio > 0.15):
-            return Field.OPEN_MINE
+            return Field_Content.OPEN_MINE
         else:
             white_pixels = np.sum(field_image_gray > 250)
             white_pixel_ratio = white_pixels/area
             if(white_pixel_ratio > 0.12):
-                return Field.CLOSED_UNKNOWN
-            else: return Field.OPEN_EMPTY
+                return Field_Content.CLOSED_UNKNOWN
+            else: return Field_Content.OPEN_EMPTY
 
 
 
@@ -122,7 +122,7 @@ def classifyNumber(image):
             return 7
         else: pass
     else: pass
-    return Field.UNDETERMINED
+    return Field_Content.UNDETERMINED
 
 
 

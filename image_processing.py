@@ -104,21 +104,21 @@ def classifyNumber(image):
     hue = pixel[0]
     vibration = pixel[2]
     if(vibration > 230):
-        if(hue > 115 and hue < 125):
+        if(hue in range(115,126)):
             return 1
         if(hue > 175 or hue < 5):
             return 3
         else: pass
-    elif(vibration > 100 & vibration < 150):
-        if(hue > 55 and hue < 65):
+    elif(vibration in range(100,151)):
+        if(hue in range(55,66)):
             return 2
-        if(hue > 115 and hue < 125):
+        if(hue in range(115,126)):
             return 4
         if(hue > 175 or hue < 5):
             return 5 
-        if(hue > 85 and hue < 95):
+        if(hue in range(85,96)):
             return 6
-        if(hue > 145 and hue < 155):
+        if(hue in range(145,156)):
             return 7
         else: pass
     else: pass

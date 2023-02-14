@@ -1,6 +1,7 @@
-import image_processing as ip
-import screen_manager as sm
+import game_logic as gl
 import test
 
 
-test.performRandomSolving()
+#test.performRandomSolving()
+
+#gl.performOptimalSolving()

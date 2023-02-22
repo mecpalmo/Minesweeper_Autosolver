@@ -55,7 +55,9 @@ class Field:
     
     def generateSolutions(self):
         self.solutions = []
-        #trzeba obliczyć ile jest kombinacji. Pamiętasz ten wyznacznik Newtona czy jak to się tam nazywało?
+        #trzeba obliczyć ile jest kombinacji. dwumian newtona: math.comb(n, k)
+        #wybierz k elementów na n miejsc
+        
 
 class Solution:
     def __init__(self):

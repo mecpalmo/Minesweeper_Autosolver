@@ -1,4 +1,4 @@
-import game_logic as gl
+import minesweeper.minesweeper.game_logic as gl
 import test
 
 

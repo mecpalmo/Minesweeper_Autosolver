@@ -1,5 +1,5 @@
 import cv2 as cv
-import minesweeper.minesweeper.image_processing as ip
+import image_processing as ip
 import screen_manager as sm
 import random
 import time

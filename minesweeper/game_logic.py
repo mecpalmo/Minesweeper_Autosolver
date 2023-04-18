@@ -1,4 +1,4 @@
-import minesweeper.minesweeper.image_processing as ip
+import image_processing as ip
 import screen_manager as sm
 from field_enum import Field_Content
 

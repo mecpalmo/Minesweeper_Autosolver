@@ -29,7 +29,7 @@ def getUnknownFields(x, y, grid, cols, rows):
     end_y = min(rows, y+2)
     for i in range(start_x, end_x):
         for j in range(start_y, end_y):
-            if grid[i,j] == Field_Content.CLOSED_UNKNOWN:
+            if grid[i,j] == Field_Content.CLOSED_UNKNOWN.value:
                 fields.append(generateID(i,j))
     return fields
 
@@ -40,7 +40,7 @@ def countFlags(x, y, grid, cols, rows):
     end_x = min(cols, x+2)
     end_y = min(rows, y+2)
     for field in grid[start_x:end_x, start_y:end_y]:
-        if field == Field_Content.CLOSED_FLAG: flags+=1
+        if field == Field_Content.CLOSED_FLAG.value: flags+=1
     return flags
 
 def generateID(x, y, columns):

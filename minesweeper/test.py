@@ -14,16 +14,16 @@ def performRandomSolving():
 
     grid_content, x0, y0, columns, rows, square_side_length = ip.getDefinedGrid(sm.getScreenshot())
     
-    while(Field_Content.CLOSED_UNKNOWN in grid_content):
+    while(Field_Content.CLOSED_UNKNOWN.value in grid_content):
         screenshot = sm.getScreenshot() 
         grid_content, x0, y0, columns, rows, square_side_length = ip.getDefinedGrid(screenshot)
         grid_details = [x0, y0, square_side_length]
-        if Field_Content.OPEN_MINE in grid_content:
+        if Field_Content.OPEN_MINE.value in grid_content:
             x, y = ip.getEmojiCenterPoint(screenshot)
             sm.click(x, y)
         random_column = random.randint(0, columns-1)
         random_row = random.randint(0, rows-1)
-        if(grid_content[random_column, random_row] == Field_Content.CLOSED_UNKNOWN):
+        if(grid_content[random_column, random_row] == Field_Content.CLOSED_UNKNOWN.value):
             x, y = sm.getFieldCenter(random_column, random_row, grid_details)
             sm.click(x, y)
         time.sleep(0.1)

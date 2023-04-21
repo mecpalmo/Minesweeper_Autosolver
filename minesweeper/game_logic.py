@@ -1,5 +1,6 @@
 import image_processing as ip
 import screen_manager as sm
+from logic_classes.Field import Field
 from field_enum import Field_Content
 
 def performOptimalSolving():
@@ -21,7 +22,23 @@ def performOptimalSolving():
         field.unknown_fields_ids = getUnknownFields(field.x, field.y, grid_content, columns, rows)
         field.generateSolutions()
 
+    # dla każdego pracującego pola znajdź inne pola które mają tabelę otaczających pól całkowicie zawierającą się
+    # w obecnie rozpatrywanym polu
+
+    # po znalezieniu takiej pary wyeliminuj rozwiązania z tabeli rozwiązań, które się nie pokrywają
+
+    # może się okazać, że wczyszczenie jakiejś tabeli wpłynęłoby na czyszczenie tabeli pola, które było rozpatrywane
+    # wcześniej, przez co dopiero w kolejnej iteracji zostanie to osiągnięte
+
+    # po wykonaniu jednej serii czyszczenia, wybieramy pola które w tabeli rozwiązań mają tylko jedno rozwiązanie
+    # jeżeli nie ma takiego ani jednego pola, ponawiamy czyszczenie 5 razy, jeśli wciąż nie ma takiego pola,
+    # musimy kliknąć w losowe pole
+
+    # ponawiamy całą funkcję od samego początku póki występują jakieś nieznane pola
+
+
 def getUnknownFields(x, y, grid, cols, rows):
+
     fields = []
     start_x = max(0, x-1)
     start_y = max(0, y-1)
@@ -33,7 +50,9 @@ def getUnknownFields(x, y, grid, cols, rows):
                 fields.append(generateID(i,j))
     return fields
 
+
 def countFlags(x, y, grid, cols, rows):
+
     flags = 0
     start_x = max(0, x-1)
     start_y = max(0, y-1)
@@ -43,32 +62,7 @@ def countFlags(x, y, grid, cols, rows):
         if field == Field_Content.CLOSED_FLAG.value: flags+=1
     return flags
 
+
 def generateID(x, y, columns):
+
     return x*columns + y
-
-class Field:
-    def __init__(self, _id, _x, _y, _value):
-        self.id = _id
-        self.x = _x
-        self.y = _y
-        self.value = _value
-    
-    def generateSolutions(self):
-        self.solutions = []
-        #trzeba obliczyć ile jest kombinacji. dwumian newtona: math.comb(n, k)
-        #wybierz k elementów na n miejsc
-        
-
-class Solution:
-    def __init__(self):
-        self.field_guesses = []
-
-    def generateSolution(self, _x, _y, _bomb):
-        self.field_guesses.append(Field_guess(_x, _y, _bomb))
-
-class Field_guess:
-    def __init__(self, _id, _x, _y, _bomb):
-        self.id = _id
-        self.x = _x
-        self.y = _y
-        self.bomb = _bomb #True or False

@@ -1,7 +1,6 @@
 import game_logic as gl
-import test
+import testing
 
-
-test.performRandomSolving()
+testing.performRandomSolving()
 
 #gl.performOptimalSolving()

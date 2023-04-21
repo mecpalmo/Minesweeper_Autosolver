@@ -1,8 +1,7 @@
 import cv2 as cv
 import numpy as np
 from field_enum import Field_Content
-from test import SHOW_IMAGE_PROCESSING
-
+from testing import SHOW_IMAGE_PROCESSING
 
 
 def getGridDetails(screenshot):

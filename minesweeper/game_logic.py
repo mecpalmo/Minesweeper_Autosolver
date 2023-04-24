@@ -22,6 +22,12 @@ def performOptimalSolving():
         field.unknown_fields_ids = getUnknownFields(field.x, field.y, grid_content, columns, rows)
         field.generateSolutions()
 
+    for field in working_fields:
+        for field_b in working_fields:
+            if field != field_b:
+                if set(field_b.unknown_fields_ids).issubset(set(field.unknown_fields_ids)):
+                    ...
+                    
     # dla każdego pracującego pola znajdź inne pola które mają tabelę otaczających pól całkowicie zawierającą się
     # w obecnie rozpatrywanym polu
 

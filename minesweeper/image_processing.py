@@ -2,6 +2,7 @@ import cv2 as cv
 import numpy as np
 from field_enum import Field_Content
 from testing import SHOW_IMAGE_PROCESSING
+from testing import GRID_DETAILS_LOGGING
 
 
 def getGridDetails(screenshot):
@@ -40,7 +41,7 @@ def getGridDetails(screenshot):
         x_spaces.append(contours_coordinate[i+1]-contours_coordinate[i])
     #I'm assuming the square side is equal to the biggest space between fields
     square_side_length = np.max(x_spaces)
-    print(f"Square side: {square_side_length}")
+    if GRID_DETAILS_LOGGING: print(f"Square side: {square_side_length}")
     #we need the size of entire grid to calculate how many fields fit in
     grid_mask_contours, _ = cv.findContours(grid_mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
     sorted(grid_mask_contours, reverse=True)
@@ -48,8 +49,8 @@ def getGridDetails(screenshot):
     x0, y0, width, height = cv.boundingRect(grid_mask_contours[0])
     columns = int(np.round((width)/(square_side_length)))
     rows = int(np.round((height)/(square_side_length)))
-    print(f"Width: {width}, Height: {height}")
-    print(f"Columns: {columns}, Rows: {rows}")
+    if GRID_DETAILS_LOGGING: print(f"Width: {width}, Height: {height}")
+    if GRID_DETAILS_LOGGING: print(f"Columns: {columns}, Rows: {rows}")
     return x0, y0, columns, rows, square_side_length
 
 

@@ -8,7 +8,8 @@ from field_enum import Field_Content
 
 TESTING = False
 SHOW_IMAGE_PROCESSING = False
-
+GRID_DETAILS_LOGGING = False
+LOGIC_SOLUTIONS_LOGGING = True
 
 def performRandomSolving():
 
@@ -26,7 +27,6 @@ def performRandomSolving():
         if(grid_content[random_column, random_row] == Field_Content.CLOSED_UNKNOWN.value):
             x, y = sm.getFieldCenter(random_column, random_row, grid_details)
             sm.clickLeft(x, y)
-        time.sleep(0.1)
 
 
 def performTestRecognition():

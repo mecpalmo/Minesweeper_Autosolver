@@ -15,5 +15,8 @@ def getFieldCenter(column, row, grid_details):
     return x, y
 
 
-def click(x, y):
-    pyautogui.click(x, y)
+def clickLeft(_x, _y):
+    pyautogui.click(_x, _y)
+
+def clickRight(_x, _y):
+    pyautogui.click(x= _x, y=_y, button='right')

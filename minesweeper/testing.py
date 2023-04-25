@@ -20,12 +20,12 @@ def performRandomSolving():
         grid_details = [x0, y0, square_side_length]
         if Field_Content.OPEN_MINE.value in grid_content:
             x, y = ip.getEmojiCenterPoint(screenshot)
-            sm.click(x, y)
+            sm.clickLeft(x, y)
         random_column = random.randint(0, columns-1)
         random_row = random.randint(0, rows-1)
         if(grid_content[random_column, random_row] == Field_Content.CLOSED_UNKNOWN.value):
             x, y = sm.getFieldCenter(random_column, random_row, grid_details)
-            sm.click(x, y)
+            sm.clickLeft(x, y)
         time.sleep(0.1)
 
 

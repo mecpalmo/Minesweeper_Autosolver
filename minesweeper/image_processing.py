@@ -5,7 +5,6 @@ from testing import SHOW_IMAGE_PROCESSING
 
 
 def getGridDetails(screenshot):
-
     game_image = getGameImage(screenshot)
     game_image_gray = cv.cvtColor(game_image, cv.COLOR_BGR2GRAY)
     game_mask = cv.inRange(game_image_gray, 130, 200)
@@ -51,9 +50,7 @@ def getGridDetails(screenshot):
     rows = int(np.round((height)/(square_side_length)))
     print(f"Width: {width}, Height: {height}")
     print(f"Columns: {columns}, Rows: {rows}")
-
     return x0, y0, columns, rows, square_side_length
-
 
 
 def getDefinedGrid(screenshot):
@@ -65,7 +62,6 @@ def getDefinedGrid(screenshot):
         for row in range(0,rows):
             grid_content[column, row] = classifyFieldContent(grid_image, column, row, square_side_length)
     return grid_content, x0, y0, columns, rows, square_side_length
-
 
 
 def classifyFieldContent(grid_image, column, row, square_side_length):
@@ -96,7 +92,6 @@ def classifyFieldContent(grid_image, column, row, square_side_length):
             else: return Field_Content.OPEN_EMPTY.value
 
 
-
 def classifyNumber(image):
     image_hsv = cv.cvtColor(image, cv.COLOR_BGR2HSV)
     pixel = getDominantColorPixel(image_hsv)
@@ -124,7 +119,6 @@ def classifyNumber(image):
     return Field_Content.UNDETERMINED.value
 
 
-
 def getDominantColorPixel(image_hsv):
     width = image_hsv.shape[1]
     height = image_hsv.shape[0]
@@ -137,14 +131,12 @@ def getDominantColorPixel(image_hsv):
                 return pixel #returns pixel in hsv
 
 
-
 def getFieldImage(grid_image, column, row, square_side_length):
     mask = np.zeros(grid_image.shape[:2], np.uint8)
     x1, y1, x2, y2 = getFieldCoordinates(square_side_length, column, row)
     field_img = grid_image[y1:y2, x1:x2]
     showImage(field_img)
     return(field_img)
-
 
 
 def getFieldCoordinates(square_side_length, column, row):
@@ -155,9 +147,7 @@ def getFieldCoordinates(square_side_length, column, row):
     return x1, y1, x2, y2
 
 
-
 def getEmojiCenterPoint(screenshot):
-
     game_image = getGameImage(screenshot)
     game_image_hsv = cv.cvtColor(game_image, cv.COLOR_BGR2HSV)
     #I'm detecting Emoji based on yellow color
@@ -176,7 +166,6 @@ def getEmojiCenterPoint(screenshot):
 
 
 def getGameImage(screenshot):
-
     hsv = cv.cvtColor(screenshot, cv.COLOR_BGR2HSV)
     #I'm detecting the game area based on certain shades of gray with no vibrance
     lower_threshold = np.array([0, 0, 130])
@@ -197,7 +186,6 @@ def getGameImage(screenshot):
     return cv.bitwise_and(screenshot, screenshot, mask=game_mask)
 
 
-
 def filterRectangleContours(contours):
     rectangle_contours = []
     for cnt in contours:
@@ -205,7 +193,6 @@ def filterRectangleContours(contours):
         if len(approx) == 4:
             rectangle_contours.append(cnt)
     return rectangle_contours
-
 
 
 def filterSquareContours(contours):
@@ -222,12 +209,10 @@ def filterSquareContours(contours):
     return square_contours
 
 
-
 def drawContours(image, contours):
     image_copy = image.copy()
     cv.drawContours(image_copy, contours, -1, (0,255,0), 1)
     showImage(image_copy)
-
 
 
 def showImage(image):

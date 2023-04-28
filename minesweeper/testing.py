@@ -8,8 +8,8 @@ from field_enum import Field_Content
 
 TESTING = False
 SHOW_IMAGE_PROCESSING = False
-GRID_DETAILS_LOGGING = False
-LOGIC_SOLUTIONS_LOGGING = True
+GRID_DETAILS_LOGGING = True
+LOGIC_SOLUTIONS_LOGGING = False
 
 def performRandomSolving():
 

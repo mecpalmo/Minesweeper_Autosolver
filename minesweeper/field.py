@@ -22,9 +22,3 @@ class Field:
                 for i in indices:
                     arr[i] = 1
                 self.solutions.append( {id: content for id, content in zip(unknown_fields_ids, arr)} )
-
-
-f = Field(44, 4, 4, 4)
-f.bombs = 0
-f.generateSolutions([0,1,2,3,4,5,6,7])
-print(f.solutions)

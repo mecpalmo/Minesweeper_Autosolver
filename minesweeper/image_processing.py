@@ -2,7 +2,6 @@ import cv2 as cv
 import numpy as np
 from field_enum import Field_Content
 from testing import SHOW_IMAGE_PROCESSING
-from testing import GRID_DETAILS_LOGGING
 
 
 def getGridDetails(screenshot):
@@ -11,7 +10,7 @@ def getGridDetails(screenshot):
     game_mask = cv.inRange(game_image_gray, 130, 200)
     game_mask = cv.morphologyEx(game_mask, cv.MORPH_CLOSE, kernel=np.ones((3,3), np.uint8))
     game_mask = cv.morphologyEx(game_mask, cv.MORPH_OPEN, kernel=np.ones((3,3), np.uint8))
-    showImage(game_mask)
+    #showImage(game_mask)
     game_contours, _ = cv.findContours(game_mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
     rectangle_contours = filterRectangleContours(game_contours)
     rectangle_contours = sorted(rectangle_contours, key=cv.contourArea, reverse=True)
@@ -22,9 +21,9 @@ def getGridDetails(screenshot):
     #the grid mask needs to be smoothened out. We need it quite precise
     grid_mask = cv.erode(grid_mask, kernel=np.ones((11, 11), np.uint8))
     grid_image = cv.bitwise_and(game_image, game_image, mask=grid_mask)
-    showImage(grid_image)
+    #showImage(grid_image)
     grid_canny = cv.Canny(grid_image,100,300,apertureSize = 3)
-    showImage(grid_canny)
+    #showImage(grid_canny)
     grid_contours, _ = cv.findContours(grid_canny, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
     square_contours = filterSquareContours(grid_contours)
     drawContours(grid_image, square_contours)
@@ -41,7 +40,6 @@ def getGridDetails(screenshot):
         x_spaces.append(contours_coordinate[i+1]-contours_coordinate[i])
     #I'm assuming the square side is equal to the biggest space between fields
     square_side_length = np.max(x_spaces)
-    if GRID_DETAILS_LOGGING: print(f"Square side: {square_side_length}")
     #we need the size of entire grid to calculate how many fields fit in
     grid_mask_contours, _ = cv.findContours(grid_mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
     sorted(grid_mask_contours, reverse=True)
@@ -49,8 +47,7 @@ def getGridDetails(screenshot):
     x0, y0, width, height = cv.boundingRect(grid_mask_contours[0])
     columns = int(np.round((width)/(square_side_length)))
     rows = int(np.round((height)/(square_side_length)))
-    if GRID_DETAILS_LOGGING: print(f"Width: {width}, Height: {height}")
-    if GRID_DETAILS_LOGGING: print(f"Columns: {columns}, Rows: {rows}")
+    print(f"Columns: {columns}, Rows: {rows}")
     return x0, y0, columns, rows, square_side_length
 
 
@@ -71,7 +68,7 @@ def classifyFieldContent(grid_image, column, row, square_side_length):
     lower_threshold = np.array([0, 200, 50])
     upper_threshold = np.array([180, 255, 255])
     color_mask = cv.inRange(field_image_hsv, lower_threshold, upper_threshold)
-    showImage(color_mask)
+    #showImage(color_mask)
     color_pixels = np.sum(color_mask == 255)
     area = np.square(square_side_length)
     color_pixel_ratio = color_pixels/area
@@ -88,9 +85,10 @@ def classifyFieldContent(grid_image, column, row, square_side_length):
         else:
             white_pixels = np.sum(field_image_gray > 250)
             white_pixel_ratio = white_pixels/area
-            if(white_pixel_ratio > 0.12):
+            if(white_pixel_ratio <= 0.12):
+                return Field_Content.OPEN_EMPTY.value
+            else:
                 return Field_Content.CLOSED_UNKNOWN.value
-            else: return Field_Content.OPEN_EMPTY.value
 
 
 def classifyNumber(image):
@@ -136,7 +134,7 @@ def getFieldImage(grid_image, column, row, square_side_length):
     mask = np.zeros(grid_image.shape[:2], np.uint8)
     x1, y1, x2, y2 = getFieldCoordinates(square_side_length, column, row)
     field_img = grid_image[y1:y2, x1:x2]
-    showImage(field_img)
+    #showImage(field_img)
     return(field_img)
 
 
@@ -156,7 +154,7 @@ def getEmojiCenterPoint(screenshot):
     upper_threshold = np.array([31, 255, 255])
     emoji_mask = cv.inRange(game_image_hsv, lower_threshold, upper_threshold)
     emoji_mask = cv.dilate(emoji_mask, kernel=np.ones((5, 5), np.uint8))
-    showImage(cv.bitwise_and(game_image, game_image, mask=emoji_mask))
+    #showImage(cv.bitwise_and(game_image, game_image, mask=emoji_mask))
     emoji_contours, _ = cv.findContours(emoji_mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
     emoji_contours = sorted(emoji_contours, key=cv.contourArea, reverse=True)
     M = cv.moments(emoji_contours[0])
@@ -172,11 +170,11 @@ def getGameImage(screenshot):
     lower_threshold = np.array([0, 0, 130])
     upper_threshold = np.array([0, 0, 200])
     game_mask = cv.inRange(hsv, lower_threshold, upper_threshold)
-    showImage(game_mask)
+    #showImage(game_mask)
     game_mask = cv.morphologyEx(game_mask, cv.MORPH_CLOSE, kernel=np.ones((3,3), np.uint8))
-    showImage(game_mask)
+    #showImage(game_mask)
     game_mask = cv.morphologyEx(game_mask, cv.MORPH_OPEN, kernel=np.ones((5,5), np.uint8))
-    showImage(game_mask)
+    #showImage(game_mask)
     game_contours, _ = cv.findContours(game_mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
     rectangle_contours = filterRectangleContours(game_contours)
     drawContours(screenshot, rectangle_contours)

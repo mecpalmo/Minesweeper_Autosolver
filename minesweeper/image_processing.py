@@ -53,8 +53,8 @@ def getGridDetails(screenshot):
     print(f"Columns: {columns}, Rows: {rows}")
     columns_table.append(columns)
     rows_table.append(rows)
-    if(len(columns_table) > 10): columns_table.remove(0)
-    if(len(rows_table) > 10): rows_table.remove(0)
+    if(len(columns_table) > 10): columns_table.remove(columns_table[0])
+    if(len(rows_table) > 10): rows_table.remove(rows_table[0])
     counter_columns = col.Counter(columns_table)
     counter_rows = col.Counter(rows_table)
     columns, count = counter_columns.most_common(1)[0]

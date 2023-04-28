@@ -4,7 +4,8 @@ import collections as col
 from field_enum import Field_Content
 from testing import SHOW_IMAGE_PROCESSING
 
-dimensions_table = []
+columns_table = []
+rows_table = []
 
 def getGridDetails(screenshot):
     game_image = getGameImage(screenshot)
@@ -50,10 +51,14 @@ def getGridDetails(screenshot):
     columns = int(np.round((width)/(square_side_length)))
     rows = int(np.round((height)/(square_side_length)))
     print(f"Columns: {columns}, Rows: {rows}")
-    dimensions_table.append([columns, rows])
-    if(len(dimensions_table) > 10): dimensions_table.remove(0)
-    counter = col.Counter(dimensions_table)
-    [columns, rows], count = counter.most_common(1)[0]
+    columns_table.append(columns)
+    rows_table.append(rows)
+    if(len(columns_table) > 10): columns_table.remove(0)
+    if(len(rows_table) > 10): rows_table.remove(0)
+    counter_columns = col.Counter(columns_table)
+    counter_rows = col.Counter(rows_table)
+    columns, count = counter_columns.most_common(1)[0]
+    rows, count = counter_rows.most_common(1)[0]
     return x0, y0, columns, rows, square_side_length
 
 

@@ -1,8 +1,10 @@
 import cv2 as cv
 import numpy as np
+import collections as col
 from field_enum import Field_Content
 from testing import SHOW_IMAGE_PROCESSING
 
+dimensions_table = []
 
 def getGridDetails(screenshot):
     game_image = getGameImage(screenshot)
@@ -48,6 +50,10 @@ def getGridDetails(screenshot):
     columns = int(np.round((width)/(square_side_length)))
     rows = int(np.round((height)/(square_side_length)))
     print(f"Columns: {columns}, Rows: {rows}")
+    dimensions_table.append([columns, rows])
+    if(len(dimensions_table) > 10): dimensions_table.remove(0)
+    counter = col.Counter(dimensions_table)
+    [columns, rows], count = counter.most_common(1)[0]
     return x0, y0, columns, rows, square_side_length
 
 

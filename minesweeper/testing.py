@@ -2,14 +2,10 @@ import cv2 as cv
 import image_processing as ip
 import screen_manager as sm
 import random
-import time
 from field_enum import Field_Content
-
 
 TESTING = False
 SHOW_IMAGE_PROCESSING = False
-GRID_DETAILS_LOGGING = True
-LOGIC_SOLUTIONS_LOGGING = False
 
 def performRandomSolving():
 

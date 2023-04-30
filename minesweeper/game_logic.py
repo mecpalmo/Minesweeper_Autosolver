@@ -14,13 +14,15 @@ def performOptimalSolving():
         grid_content, x0, y0, columns, rows, square_side_length = ip.getDefinedGrid(screenshot)
         grid_details = [x0, y0, square_side_length]
 
+        #print(grid_content)
+
         #collecting fields defining possible mine positions
         working_fields = []
         for i in range(0,columns):
             for j in range(0,rows):
                 value = grid_content[i,j]
                 if value in range(1,9):
-                    working_fields.append(Field(generateID(i,j,columns), i, j, value))
+                    working_fields.append(Field(generateID(i,j,rows), i, j, value))
 
         #generating solutions
         for field in working_fields:
@@ -29,31 +31,35 @@ def performOptimalSolving():
             unknown_fields_ids = getUnknownFields(field.x, field.y, grid_content, columns, rows)
             field.generateSolutions(unknown_fields_ids)
 
-        #comparing and eliminating solutions 
-        for field_a in working_fields:
-            for field_b in working_fields:
-                if len(field_a.solutions) > 0 and len(field_b.solutions) > 0 and field_a != field_b:
-                    if len(set(field_a.solutions[0].keys()).intersection(set(field_b.solutions[0].keys()))) > 0:
-                        newSolutions = []
-                        for dict_a in field_a.solutions:
-                            for dict_b in field_b.solutions:
-                                if are_dicts_overlapping(dict_a, dict_b):
-                                    if dict_a not in newSolutions:
-                                        newSolutions.append(dict_a)
-                        field_a.solutions = newSolutions        
+        #comparing and eliminating solutions couple of times
+        for i in range(0,3):
+            for field_a in working_fields:
+                for field_b in working_fields:
+                    if len(field_a.solutions) > 0 and len(field_b.solutions) > 0 and field_a != field_b:
+                        if len(set(field_a.solutions[0].keys()).intersection(set(field_b.solutions[0].keys()))) > 0:
+                            newSolutions = []
+                            for dict_a in field_a.solutions:
+                                for dict_b in field_b.solutions:
+                                    if are_dicts_overlapping(dict_a, dict_b):
+                                        if dict_a not in newSolutions:
+                                            newSolutions.append(dict_a)
+                            field_a.solutions = newSolutions        
     
         #collecting executable solutions
         executable_solutions = {}
         for field in working_fields:
+            if len(field.solutions) == 1:
+                executable_solutions.update(field.solutions[0])
             sure_partial_solution = getSurePartialSolution(field.solutions)
-            if len(sure_partial_solution) > 0:
+            if len(sure_partial_solution) > 1:
                 executable_solutions.update(sure_partial_solution)
             
         #executing found solutions
         print(executable_solutions)
-        executeSolution(executable_solutions, columns, grid_details)
+        executeSolution(executable_solutions, rows, grid_details)
 
         if len(executable_solutions) == 0:
+            print("performing random shot")
             random_column = random.randint(0, columns-1)
             random_row = random.randint(0, rows-1)
             if(grid_content[random_column, random_row] == Field_Content.CLOSED_UNKNOWN.value):
@@ -61,9 +67,8 @@ def performOptimalSolving():
                 sm.clickLeft(x, y)
 
         if Field_Content.OPEN_MINE.value in grid_content:
-            break
-            #x, y = ip.getEmojiCenterPoint(screenshot)
-            #sm.clickLeft(x, y)
+            x, y = ip.getEmojiCenterPoint(screenshot)
+            sm.clickLeft(x, y)
     
 def getSurePartialSolution(solutions):
     sure_solution_dict = {}
@@ -74,9 +79,10 @@ def getSurePartialSolution(solutions):
                 sure_solution_dict[key] = value
     return sure_solution_dict
 
-def executeSolution(solution, columns, grid_details):
+
+def executeSolution(solution, rows, grid_details):
     for id, value in solution.items():
-        column, row = getCoordinatesFromID(id, columns)
+        column, row = getCoordinatesFromID(id, rows)
         x, y = sm.getFieldCenter(column, row, grid_details)
         if value == 0:
             sm.clickLeft(x, y)
@@ -101,7 +107,7 @@ def getUnknownFields(x, y, grid, cols, rows):
     for i in range(start_x, end_x):
         for j in range(start_y, end_y):
             if grid[i,j] == Field_Content.CLOSED_UNKNOWN.value:
-                unknown_fields_ids.append(generateID(i,j,cols))
+                unknown_fields_ids.append(generateID(i,j,rows))
     return unknown_fields_ids
 
 
@@ -117,9 +123,9 @@ def countFlags(x, y, grid, cols, rows):
     return flags
 
 
-def generateID(x, y, columns):
-    return x*columns + y
+def generateID(x, y, rows):
+    return x*rows + y
 
 
-def getCoordinatesFromID(id, columns):
-    return int(id/columns), (id % columns)
+def getCoordinatesFromID(id, rows):
+    return int(id/rows), (id % rows)

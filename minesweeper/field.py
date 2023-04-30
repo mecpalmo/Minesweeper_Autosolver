@@ -16,6 +16,11 @@ class Field:
         n = len(unknown_fields_ids)
         k = self.bombs
         self.solutions = []
+        if self.bombs == 0:
+            solution = {}
+            for id in unknown_fields_ids:
+                solution.update({id: 0})
+            self.solutions.append(solution)
         if self.bombs > 0:
             for indices in itertools.combinations(range(n), k):
                 arr = [0] * n

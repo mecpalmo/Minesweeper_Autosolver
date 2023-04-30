@@ -5,7 +5,6 @@ import random
 from field_enum import Field_Content
 
 TESTING = False
-SHOW_IMAGE_PROCESSING = False
 
 def performRandomSolving():
 
@@ -26,11 +25,11 @@ def performRandomSolving():
 
 
 def performTestRecognition():
-    grid_content, x0, y0, columns, rows, square_side_length = ip.getDefinedGrid(getTestImage(2))
+    grid_content, x0, y0, columns, rows, square_side_length = ip.getDefinedGrid(getTestImage(6))
 
 
 def getTestImage(index):
-    image = cv.imread(f'images/ss{index}.png',-1)
+    image = cv.imread(f'./ss{index}.png',-1)
     image = cv.cvtColor(image, cv.COLOR_BGRA2BGR)
     return image
 
@@ -55,3 +54,7 @@ if(TESTING):
     print("test 5")
     _, _, columns, rows, _ = ip.getGridDetails(getTestImage(5))
     print(f"Grid: {columns}x{rows}, Should be: 30x16")
+
+
+
+performTestRecognition()

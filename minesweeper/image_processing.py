@@ -1,8 +1,8 @@
 import cv2 as cv
 import numpy as np
-import collections as col
 from field_enum import Field_Content
-from testing import SHOW_IMAGE_PROCESSING
+
+SHOW_IMAGE_PROCESSING = True
 
 columns_table = []
 rows_table = []
@@ -13,7 +13,6 @@ def getGridDetails(screenshot):
     game_mask = cv.inRange(game_image_gray, 130, 200)
     game_mask = cv.morphologyEx(game_mask, cv.MORPH_CLOSE, kernel=np.ones((3,3), np.uint8))
     game_mask = cv.morphologyEx(game_mask, cv.MORPH_OPEN, kernel=np.ones((3,3), np.uint8))
-    #showImage(game_mask)
     game_contours, _ = cv.findContours(game_mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
     rectangle_contours = filterRectangleContours(game_contours)
     rectangle_contours = sorted(rectangle_contours, key=cv.contourArea, reverse=True)
@@ -23,10 +22,9 @@ def getGridDetails(screenshot):
     cv.drawContours(grid_mask, rectangle_contours, contourIdx=1, color=(255, 255, 255), thickness=cv.FILLED)
     #the grid mask needs to be smoothened out. We need it quite precise
     grid_mask = cv.erode(grid_mask, kernel=np.ones((11, 11), np.uint8))
+    grid_mask = cv.erode(grid_mask, kernel=np.ones((11, 11), np.uint8))
     grid_image = cv.bitwise_and(game_image, game_image, mask=grid_mask)
-    #showImage(grid_image)
     grid_canny = cv.Canny(grid_image,100,300,apertureSize = 3)
-    #showImage(grid_canny)
     grid_contours, _ = cv.findContours(grid_canny, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
     square_contours = filterSquareContours(grid_contours)
     drawContours(grid_image, square_contours)
@@ -51,25 +49,19 @@ def getGridDetails(screenshot):
     columns = int(np.round((width)/(square_side_length)))
     rows = int(np.round((height)/(square_side_length)))
     print(f"Columns: {columns}, Rows: {rows}")
-    columns_table.append(columns)
-    rows_table.append(rows)
-    if(len(columns_table) > 10): columns_table.remove(columns_table[0])
-    if(len(rows_table) > 10): rows_table.remove(rows_table[0])
-    counter_columns = col.Counter(columns_table)
-    counter_rows = col.Counter(rows_table)
-    columns, count = counter_columns.most_common(1)[0]
-    rows, count = counter_rows.most_common(1)[0]
     return x0, y0, columns, rows, square_side_length
 
 
 def getDefinedGrid(screenshot):
     x0, y0, columns, rows, square_side_length = getGridDetails(screenshot)
     grid_image = screenshot[y0:(y0+rows*square_side_length), x0:(x0+columns*square_side_length)]
-    showImage(grid_image)
+    #showImage(grid_image)
     grid_content = np.ones((columns,rows))*Field_Content.UNDETERMINED.value
     for column in range(0,columns):
         for row in range(0,rows):
             grid_content[column, row] = classifyFieldContent(grid_image, column, row, square_side_length)
+            #print(f"Detected: {grid_content[column, row]}")
+            #showImage(screenshot[(y0+row*square_side_length):(y0+(row+1)*square_side_length), (x0+column*square_side_length):(x0+(column+1)*square_side_length)])
     return grid_content, x0, y0, columns, rows, square_side_length
 
 
@@ -79,7 +71,6 @@ def classifyFieldContent(grid_image, column, row, square_side_length):
     lower_threshold = np.array([0, 200, 50])
     upper_threshold = np.array([180, 255, 255])
     color_mask = cv.inRange(field_image_hsv, lower_threshold, upper_threshold)
-    #showImage(color_mask)
     color_pixels = np.sum(color_mask == 255)
     area = np.square(square_side_length)
     color_pixel_ratio = color_pixels/area
@@ -94,9 +85,9 @@ def classifyFieldContent(grid_image, column, row, square_side_length):
         if(black_pixel_ratio > 0.15):
             return Field_Content.OPEN_MINE.value
         else:
-            white_pixels = np.sum(field_image_gray > 250)
-            white_pixel_ratio = white_pixels/area
-            if(white_pixel_ratio <= 0.12):
+            gray_pixels = np.count_nonzero((field_image_gray >= 195) & (field_image_gray <= 201))
+            gray_pixel_ratio = gray_pixels/area
+            if(gray_pixel_ratio > 0.70):
                 return Field_Content.OPEN_EMPTY.value
             else:
                 return Field_Content.CLOSED_UNKNOWN.value
@@ -108,22 +99,15 @@ def classifyNumber(image):
     hue = pixel[0]
     vibration = pixel[2]
     if(vibration > 230):
-        if(hue in range(115,126)):
-            return 1
-        if(hue > 175 or hue < 5):
-            return 3
+        if(hue in range(115,126)): return 1
+        if(hue > 175 or hue < 5): return 3
         else: pass
     elif(vibration in range(100,151)):
-        if(hue in range(55,66)):
-            return 2
-        if(hue in range(115,126)):
-            return 4
-        if(hue > 175 or hue < 5):
-            return 5 
-        if(hue in range(85,96)):
-            return 6
-        if(hue in range(145,156)):
-            return 7
+        if(hue in range(55,66)): return 2
+        if(hue in range(115,126)): return 4
+        if(hue > 175 or hue < 5): return 5 
+        if(hue in range(85,96)): return 6
+        if(hue in range(145,156)): return 7
         else: pass
     else: pass
     return Field_Content.UNDETERMINED.value
@@ -145,7 +129,6 @@ def getFieldImage(grid_image, column, row, square_side_length):
     mask = np.zeros(grid_image.shape[:2], np.uint8)
     x1, y1, x2, y2 = getFieldCoordinates(square_side_length, column, row)
     field_img = grid_image[y1:y2, x1:x2]
-    #showImage(field_img)
     return(field_img)
 
 
@@ -165,7 +148,6 @@ def getEmojiCenterPoint(screenshot):
     upper_threshold = np.array([31, 255, 255])
     emoji_mask = cv.inRange(game_image_hsv, lower_threshold, upper_threshold)
     emoji_mask = cv.dilate(emoji_mask, kernel=np.ones((5, 5), np.uint8))
-    #showImage(cv.bitwise_and(game_image, game_image, mask=emoji_mask))
     emoji_contours, _ = cv.findContours(emoji_mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
     emoji_contours = sorted(emoji_contours, key=cv.contourArea, reverse=True)
     M = cv.moments(emoji_contours[0])
@@ -174,18 +156,14 @@ def getEmojiCenterPoint(screenshot):
     return x_center, y_center
 
 
-
 def getGameImage(screenshot):
     hsv = cv.cvtColor(screenshot, cv.COLOR_BGR2HSV)
     #I'm detecting the game area based on certain shades of gray with no vibrance
     lower_threshold = np.array([0, 0, 130])
     upper_threshold = np.array([0, 0, 200])
     game_mask = cv.inRange(hsv, lower_threshold, upper_threshold)
-    #showImage(game_mask)
     game_mask = cv.morphologyEx(game_mask, cv.MORPH_CLOSE, kernel=np.ones((3,3), np.uint8))
-    #showImage(game_mask)
     game_mask = cv.morphologyEx(game_mask, cv.MORPH_OPEN, kernel=np.ones((5,5), np.uint8))
-    #showImage(game_mask)
     game_contours, _ = cv.findContours(game_mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
     rectangle_contours = filterRectangleContours(game_contours)
     drawContours(screenshot, rectangle_contours)
@@ -222,10 +200,9 @@ def filterSquareContours(contours):
 def drawContours(image, contours):
     image_copy = image.copy()
     cv.drawContours(image_copy, contours, -1, (0,255,0), 1)
-    showImage(image_copy)
 
 
 def showImage(image):
     if(SHOW_IMAGE_PROCESSING):
-        cv.imshow("image_funtion", image)
+        cv.imshow("image_function", image)
         cv.waitKey(0)

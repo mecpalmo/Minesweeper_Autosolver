@@ -4,28 +4,20 @@
 
 Welcome to the minesweeper solver. This program written in Python solves minesweeper on its own. 
 
-The program uses the open-cv library and pyautogui to find the minesweeper game on your computer screen and then clicks the mine fields automaticaly with your cursor.
+The program uses the open-cv and pyautogui libraries to find the minesweeper game on your computer screen and then clicks the mine fields automaticaly with your cursor.
 
 ---
 
 ## Installation
 
-You just need to have Python and create a virtual environment. Install packages from "requirements.txt" into your venv and you're good to go.
+You just need to have Python and create a virtual environment. Install packages from "requirements.txt" into your venv and you're good to go. If you don't know how to use virtual environments in Python, google it. It's pretty easy and you'll be done in 3 minutes.
 
 ---
 
 ## Usage
 
-* Navigate to main.py. There you have 2 lines of code:
+* Navigate to main.py and just run it. At the moment you run it you need to have the game visible on your screen, so try to fit both the game and the terminal/IDE on your screen. Notice that if you use multiple monitors, the pyautogui may not see anything other than the primary monitor.
 
-    - `test.performRandomSolving()` - runs the program without logic. Program randomly clicks on undiscovered fields and automaticaly restarts the game. Stops when wins (never happens)
-
-    - `gl.performOptimalSolving()` - runs the program with logic. Its goal is to win the game. If it fails due to random factor of the game, restarts the game automatically. Stops when wins.
-
-* In file test.py you have flags for testing:
-
-    - `TESTING = False` If True runs tests with terminal output
-
-    - `SHOW_IMAGE_PROCESSING = False` If True shows every step of image processing for every cycle for testing. If you want to use the program for solving this should definitely be False
+* If you want to experiment, navigate to testing.py. From there you can run functions to perform random clicking on the detected game or perform a single iteration detection from a static screenshot.
 
 ---

@@ -2,7 +2,7 @@ import cv2 as cv
 import numpy as np
 from field_enum import Field_Content
 
-SHOW_IMAGE_PROCESSING = True
+SHOW_GRID_RECOGNITION = False
 
 columns_table = []
 rows_table = []
@@ -16,7 +16,6 @@ def getGridDetails(screenshot):
     game_contours, _ = cv.findContours(game_mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
     rectangle_contours = filterRectangleContours(game_contours)
     rectangle_contours = sorted(rectangle_contours, key=cv.contourArea, reverse=True)
-    drawContours(game_image, rectangle_contours)
     #I'm assuming the 2nd biggest rectangle contour is around the grid
     grid_mask = np.zeros((game_image.shape[:2]), np.uint8)
     cv.drawContours(grid_mask, rectangle_contours, contourIdx=1, color=(255, 255, 255), thickness=cv.FILLED)
@@ -60,8 +59,8 @@ def getDefinedGrid(screenshot):
     for column in range(0,columns):
         for row in range(0,rows):
             grid_content[column, row] = classifyFieldContent(grid_image, column, row, square_side_length)
-            #print(f"Detected: {grid_content[column, row]}")
-            #showImage(screenshot[(y0+row*square_side_length):(y0+(row+1)*square_side_length), (x0+column*square_side_length):(x0+(column+1)*square_side_length)])
+            showImage(screenshot[(y0+row*square_side_length):(y0+(row+1)*square_side_length), (x0+column*square_side_length):(x0+(column+1)*square_side_length)])
+    print(f"Grid Content: {grid_content[column, row]}")
     return grid_content, x0, y0, columns, rows, square_side_length
 
 
@@ -166,7 +165,6 @@ def getGameImage(screenshot):
     game_mask = cv.morphologyEx(game_mask, cv.MORPH_OPEN, kernel=np.ones((5,5), np.uint8))
     game_contours, _ = cv.findContours(game_mask, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
     rectangle_contours = filterRectangleContours(game_contours)
-    drawContours(screenshot, rectangle_contours)
     game_mask = np.zeros((screenshot.shape[:2]), np.uint8)
     #I'm assuming the biggest contour is bounding the game area
     rectangle_contours = sorted(rectangle_contours, key=cv.contourArea, reverse=True)
@@ -200,9 +198,10 @@ def filterSquareContours(contours):
 def drawContours(image, contours):
     image_copy = image.copy()
     cv.drawContours(image_copy, contours, -1, (0,255,0), 1)
+    showImage(image_copy)
 
 
 def showImage(image):
-    if(SHOW_IMAGE_PROCESSING):
+    if(SHOW_GRID_RECOGNITION):
         cv.imshow("image_function", image)
         cv.waitKey(0)

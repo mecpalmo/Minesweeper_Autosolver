@@ -32,7 +32,7 @@ def performOptimalSolving():
             field.generateSolutions(unknown_fields_ids)
 
         #comparing and eliminating solutions couple of times
-        for i in range(0,3):
+        for i in range(0,2):
             for field_a in working_fields:
                 for field_b in working_fields:
                     if len(field_a.solutions) > 0 and len(field_b.solutions) > 0 and field_a != field_b:
@@ -55,7 +55,7 @@ def performOptimalSolving():
                 executable_solutions.update(sure_partial_solution)
             
         #executing found solutions
-        print(executable_solutions)
+        print(f'Fields content determined: {executable_solutions}')
         executeSolution(executable_solutions, rows, grid_details)
 
         if len(executable_solutions) == 0:
